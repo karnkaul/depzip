@@ -1,8 +1,8 @@
 #include <depzip/instance.hpp>
-#include <detail/git.hpp>
 #include <detail/package.hpp>
+#include <detail/programs/git.hpp>
+#include <detail/programs/zip.hpp>
 #include <detail/workspace.hpp>
-#include <detail/zip.hpp>
 
 namespace dz::detail {
 namespace {

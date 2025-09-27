@@ -1,6 +1,6 @@
 #pragma once
 #include <depzip/package_info.hpp>
-#include <detail/git.hpp>
+#include <detail/programs/git.hpp>
 
 namespace dz::detail {
 class Package {
