@@ -1,0 +1,31 @@
+file(ARCHIVE_EXTRACT INPUT "${CMAKE_CURRENT_SOURCE_DIR}/src.zip" DESTINATION "${CMAKE_CURRENT_SOURCE_DIR}")
+
+if(NOT TARGET djson::djson)
+  message(STATUS "[djson]")
+  add_subdirectory(src/djson)
+endif()
+
+if (NOT TARGET klib::klib)
+  message(STATUS "[klib]")
+  add_subdirectory(src/klib)
+endif()
+
+set(BUILD_DOC OFF)
+set(BUILD_EXAMPLES OFF)
+set(BUILD_OSSFUZZ OFF)
+set(BUILD_REGRESS OFF)
+set(BUILD_SHARED_LIBS OFF)
+set(BUILD_TOOLS OFF)
+set(ENABLE_BZIP2 OFF)
+set(ENABLE_COMMONCRYPTO OFF)
+set(ENABLE_LZMA OFF)
+set(ENABLE_MBEDTLS OFF)
+set(ENABLE_OPENSSL OFF)
+set(ENABLE_WINDOWS_CRYPTO OFF)
+set(ENABLE_ZSTD OFF)
+
+set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
+
+message(STATUS "[libzip]")
+add_subdirectory(src/libzip)
+add_library(zip::lib ALIAS zip)
