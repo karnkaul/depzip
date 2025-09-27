@@ -10,7 +10,7 @@ class Instance : public dz::Instance {
   public:
 	using Info = InstanceInfo;
 
-	explicit Instance(Info const& info) : m_workspace(info.verbosity, info.working_dir, info.source_dir) { m_git.verbosity = m_zip.verbosity = info.verbosity; }
+	explicit Instance(Info const& info) : m_logger{.verbosity = info.verbosity}, m_workspace(m_util, info.working_dir, info.source_dir) {}
 
   private:
 	void add_package(PackageInfo const& info) final {
@@ -24,22 +24,24 @@ class Instance : public dz::Instance {
 		};
 		m_git.clone(clone_params);
 
-		util::rm_rf(m_git.verbosity, clone_params.dest_dir / ".git");
+		m_util.rm_rf(clone_params.dest_dir / ".git");
 		for (auto const& subpath : info.remove_subpaths) {
 			auto const path = clone_params.dest_dir / subpath;
-			util::rm_rf(m_git.verbosity, path);
+			m_util.rm_rf(path);
 		}
 	}
 
 	void create_zip() final {
 		m_zip.create_archive(m_workspace.get_src_dir().generic_string());
-		log_verbose(m_git.verbosity, "-- Operation complete");
+		m_logger("-- Operation complete");
 	}
 
+	Logger m_logger{};
+	Util m_util{m_logger};
 	Workspace m_workspace;
 
-	Git m_git{};
-	Zip m_zip{};
+	Git m_git{m_util};
+	Zip m_zip{m_util};
 };
 } // namespace
 } // namespace dz::detail
