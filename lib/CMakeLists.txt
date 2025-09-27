@@ -7,7 +7,6 @@ target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_23)
 
 target_link_libraries(${PROJECT_NAME} PUBLIC
   djson::djson
-  zip::lib
 )
 
 target_include_directories(${PROJECT_NAME} PRIVATE
