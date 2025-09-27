@@ -8,7 +8,7 @@ namespace {
 void run_lab() {
 	auto const info = InstanceInfo{
 		.working_dir = "test",
-		.verbosity = Verbosity::Silent,
+		.verbosity = Verbosity::Verbose,
 	};
 	auto instance = create_instance(info);
 	//

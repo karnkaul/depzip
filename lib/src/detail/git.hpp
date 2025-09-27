@@ -20,7 +20,7 @@ class Git : public Program {
 	explicit Git(Util const& util) : Program(util, std::string{name_v}) {}
 
 	void clone(Clone const& params) const {
-		if (fs::exists(params.dest_dir)) { m_util.rm_rf(params.dest_dir); }
+		if (fs::exists(params.dest_dir)) { util.rm_rf(params.dest_dir); }
 		auto const args =
 			StringBuilder{.value = std::format("{} {} --depth={}", Clone::name_v, params.url, params.depth)}.append(params.dest_dir.string()).value;
 		if (!execute(args)) { throw Panic{std::format("Failed to clone {}@{}", params.tag, params.url)}; }

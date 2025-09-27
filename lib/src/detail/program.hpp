@@ -8,13 +8,12 @@ class Program : public Shell {
 	static constexpr std::string_view does_exist_args_v = "--version";
 
 	explicit Program(Util const& util, std::string command, std::string_view const does_exist_args = does_exist_args_v)
-		: Shell(std::move(command)), m_util(util) {
+		: Shell(std::move(command)), util(util) {
 		if (!Shell::execute(does_exist_args, Verbosity::Silent)) { throw Panic{std::format("{} not found", get_command())}; }
 	}
 
-	[[nodiscard]] auto execute(std::string_view const args) const -> Result { return Shell::execute(args, m_util.logger.verbosity); }
+	[[nodiscard]] auto execute(std::string_view const args) const -> Result { return Shell::execute(args, util.logger.verbosity); }
 
-  protected:
-	Util const& m_util;
+	Util const& util;
 };
 } // namespace dz::detail
