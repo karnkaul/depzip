@@ -1,0 +1,12 @@
+{
+  "packages": [
+    {
+      "repo_uri": "karnkaul/djson",
+      "git_tag": "v3.1.2"
+    },
+    {
+      "repo_uri": "karnkaul/klib",
+      "git_tag": "v0.5.4"
+    }
+  ]
+}

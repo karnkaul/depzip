@@ -1,8 +1,7 @@
 #pragma once
 #include <depzip/verbosity.hpp>
-#include <detail/string_builder.hpp>
 #include <cstdlib>
-#include <print>
+#include <string>
 
 namespace dz::detail {
 class Shell {
@@ -25,26 +24,12 @@ class Shell {
 
 	[[nodiscard]] auto get_command() const -> std::string_view { return m_command; }
 
-	[[nodiscard]] auto execute(std::string_view const args, Verbosity const verbosity) const -> Result {
-		auto const line = StringBuilder{.value = m_command}.append(args, create_suffix(verbosity)).value;
-		print_if_verbose(line, verbosity);
-		return std::system(line.c_str()); // NOLINT(concurrency-mt-unsafe)
-	}
+	[[nodiscard]] auto execute(std::string_view args, Verbosity verbosity) const -> Result;
 
   private:
-	[[nodiscard]] static auto create_suffix(Verbosity const verbosity) -> std::string_view {
-		if (verbosity != Verbosity::Silent) { return {}; }
-#if defined(_WIN32) && !defined(__MINGW__)
-		return " >nul 2>nul";
-#else
-		return "> /dev/null 2>&1";
-#endif
-	}
+	[[nodiscard]] static auto create_suffix(Verbosity verbosity) -> std::string_view;
 
-	static void print_if_verbose(std::string_view const line, Verbosity const verbosity) {
-		if (verbosity != Verbosity::Verbose) { return; }
-		std::println("-- {}", line);
-	}
+	static void print_if_verbose(std::string_view line, Verbosity verbosity);
 
 	std::string m_command{};
 };
