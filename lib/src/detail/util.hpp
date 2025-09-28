@@ -42,7 +42,7 @@ struct Util {
 				if (failed_path.empty()) { std::rethrow_exception(std::current_exception()); }
 
 				logger("{}\n  changing perms and retrying (attempt = {})...", e.what(), attempt);
-				fs::permissions(failed_path, fs::perms::owner_write | fs::perms::group_write);
+				fs::permissions(failed_path, fs::perms::owner_write);
 			}
 		}
 
