@@ -4,8 +4,12 @@
 #include <detail/programs/git.hpp>
 #include <detail/programs/zip.hpp>
 #include <detail/workspace.hpp>
+#include <chrono>
+#include <thread>
 
 namespace dz::detail {
+using namespace std::chrono_literals;
+
 namespace {
 class Instance : public dz::Instance {
 	void vendor(std::span<PackageInfo const> packages, Config const& config) final {
@@ -45,6 +49,39 @@ class Instance : public dz::Instance {
 	std::vector<Package> m_packages{};
 };
 } // namespace
+
+void Util::rm_rf(fs::path const& path) const {
+	if (!fs::exists(path)) { return; }
+	logger("-- Deleting {}", path.generic_string());
+
+	auto const extract_failed_path = [](std::string_view const fs_err) -> std::string_view {
+		auto const lbrace = fs_err.find('[');
+		if (lbrace == std::string_view::npos) { return {}; }
+		auto ret = fs_err.substr(lbrace + 1);
+		auto const rbrace = ret.find(']');
+		if (rbrace < ret.size()) { ret.remove_suffix(ret.size() - rbrace); }
+		return ret;
+	};
+
+	static constexpr auto max_attempts_v{10};
+	auto retry_delay = 5ms;
+	for (auto attempt = 1; attempt <= max_attempts_v; ++attempt) {
+		try {
+			fs::remove_all(path);
+			return;
+		} catch (fs::filesystem_error const& e) {
+			auto const failed_path = extract_failed_path(e.what());
+			if (failed_path.empty()) { std::rethrow_exception(std::current_exception()); }
+
+			logger("{}\n  waiting {}ms before changing perms and retrying... (attempt: {})", e.what(), retry_delay.count(), attempt);
+			std::this_thread::sleep_for(retry_delay);
+			retry_delay *= 2;
+			fs::permissions(failed_path, fs::perms::owner_write);
+		}
+	}
+
+	throw Panic{std::format("Failed to delete {}", path.generic_string())};
+}
 } // namespace dz::detail
 
 auto dz::create_instance() -> std::unique_ptr<Instance> { return std::make_unique<detail::Instance>(); }
