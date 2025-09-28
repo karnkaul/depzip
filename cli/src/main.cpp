@@ -7,17 +7,19 @@
 namespace dz::cli {
 namespace {
 void run_lab() {
-	auto const info = InstanceInfo{
-		.working_dir = "test",
-		.verbosity = Verbosity::Verbose,
-	};
-	auto instance = create_instance(info);
+	auto instance = create_instance();
 
 	auto const packages = std::array{
 		PackageInfo{.repo_uri = "karnkaul/klib"},
 		PackageInfo{.repo_uri = "glfw/glfw", .remove_subpaths = {"docs", "examples"}},
 	};
-	instance->vendor(packages);
+
+	auto const config = Config{
+		.working_dir = "test",
+		.verbosity = Verbosity::Verbose,
+	};
+
+	instance->vendor(packages, config);
 }
 } // namespace
 } // namespace dz::cli
