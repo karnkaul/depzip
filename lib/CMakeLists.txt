@@ -1,0 +1,33 @@
+project(depzip-lib VERSION ${build_version})
+
+add_library(${PROJECT_NAME})
+add_library(depzip::lib ALIAS ${PROJECT_NAME})
+
+target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_23)
+
+target_link_libraries(${PROJECT_NAME} PUBLIC
+  djson::djson
+)
+
+target_include_directories(${PROJECT_NAME} PRIVATE
+  src
+)
+
+set(version_header include/depzip/build_version.hpp)
+configure_file(src/build_version.hpp.in ${version_header} @ONLY)
+
+file(GLOB_RECURSE headers LIST_DIRECTORIES false "include/*.hpp")
+
+target_sources(${PROJECT_NAME} PUBLIC FILE_SET HEADERS
+  BASE_DIRS
+  include
+  "${CMAKE_CURRENT_BINARY_DIR}/include"
+
+  FILES
+  ${headers}
+  "${CMAKE_CURRENT_BINARY_DIR}/${version_header}"
+)
+
+target_sources(${PROJECT_NAME} PRIVATE
+  src/depzip.cpp
+)
