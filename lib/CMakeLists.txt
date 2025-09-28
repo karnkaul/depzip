@@ -13,7 +13,7 @@ target_include_directories(${PROJECT_NAME} PRIVATE
   src
 )
 
-set(version_header include/${PROJECT_NAME}/build_version.hpp)
+set(version_header include/depzip/build_version.hpp)
 configure_file(src/build_version.hpp.in ${version_header} @ONLY)
 
 file(GLOB_RECURSE headers LIST_DIRECTORIES false "include/*.hpp")
@@ -31,4 +31,3 @@ target_sources(${PROJECT_NAME} PUBLIC FILE_SET HEADERS
 target_sources(${PROJECT_NAME} PRIVATE
   src/depzip.cpp
 )
-

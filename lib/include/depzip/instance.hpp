@@ -1,4 +1,5 @@
 #pragma once
+#include <depzip/build_version.hpp>
 #include <depzip/config.hpp>
 #include <depzip/package_info.hpp>
 #include <depzip/verbosity.hpp>

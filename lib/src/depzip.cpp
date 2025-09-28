@@ -10,6 +10,12 @@ namespace {
 class Instance : public dz::Instance {
 	void vendor(std::span<PackageInfo const> packages, Config const& config) final {
 		setup(config);
+
+		if (packages.empty()) {
+			std::println("Nothing to vendor");
+			return;
+		}
+
 		for (auto const& package_info : packages) { add_package(package_info); }
 		create_zip();
 	}
@@ -61,24 +67,10 @@ void dz::to_json(dj::Json& json, PackageInfo const& package) {
 	for (auto const subpath : package.remove_subpaths) { to_json(json["remove_subpaths"].push_back(), subpath); }
 }
 
-void dz::from_json(dj::Json const& json, Config& config) {
-	from_json(json["source_dir"], config.source_dir);
-	from_json(json["working_dir"], config.working_dir);
-	config.verbosity = to_verbosity(json["verbosity"].as_string_view());
+void dz::from_json(dj::Json const& json, Manifest& manifest) {
+	for (auto const& package : json["packages"].as_array()) { from_json(package, manifest.packages.emplace_back()); }
 }
 
-void dz::to_json(dj::Json& json, Config const& config) {
-	to_json(json["source_dir"], config.source_dir);
-	to_json(json["working_dir"], config.working_dir);
-	json["verbosity"] = to_string_view(config.verbosity);
-}
-
-void dz::from_json(dj::Json const& json, VendorParams& params) {
-	for (auto const& package : json["packages"].as_array()) { from_json(package, params.packages.emplace_back()); }
-	from_json(json["config"], params.config);
-}
-
-void dz::to_json(dj::Json& json, VendorParams const& params) {
-	for (auto const& package : params.packages) { to_json(json["packages"].push_back(), package); }
-	to_json(json["config"], params.config);
+void dz::to_json(dj::Json& json, Manifest const& manifest) {
+	for (auto const& package : manifest.packages) { to_json(json["packages"].push_back(), package); }
 }
