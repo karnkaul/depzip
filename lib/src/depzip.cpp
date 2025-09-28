@@ -31,7 +31,7 @@ class Instance : public dz::Instance {
 	}
 
 	void create_zip() {
-		auto const zip_name = m_zip.create_archive(m_workspace.get_src_dir().generic_string());
+		auto const zip_name = m_zip.create_archive(m_workspace.get_src_dir());
 		m_logger("== ZIP file {} created\n", zip_name);
 	}
 
