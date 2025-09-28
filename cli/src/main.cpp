@@ -1,5 +1,6 @@
 #include <depzip/instance.hpp>
 #include <depzip/package_info.hpp>
+#include <array>
 #include <exception>
 #include <print>
 
@@ -11,11 +12,12 @@ void run_lab() {
 		.verbosity = Verbosity::Verbose,
 	};
 	auto instance = create_instance(info);
-	//
 
-	instance->add_package({.repo_uri = "karnkaul/klib"});
-	instance->add_package({.repo_uri = "glfw/glfw", .remove_subpaths = {"docs", "examples"}});
-	instance->create_zip();
+	auto const packages = std::array{
+		PackageInfo{.repo_uri = "karnkaul/klib"},
+		PackageInfo{.repo_uri = "glfw/glfw", .remove_subpaths = {"docs", "examples"}},
+	};
+	instance->vendor(packages);
 }
 } // namespace
 } // namespace dz::cli

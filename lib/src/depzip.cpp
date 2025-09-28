@@ -4,17 +4,21 @@
 #include <detail/programs/zip.hpp>
 #include <detail/workspace.hpp>
 
-namespace dz::detail {
+namespace dz {
+namespace detail {
 namespace {
 class Instance : public dz::Instance {
   public:
-	using Info = InstanceInfo;
-
-	explicit Instance(Info const& info) : m_logger{.verbosity = info.verbosity} { m_workspace.setup(info.working_dir, info.source_dir); }
+	explicit Instance(Info const& info) { setup(info); }
 
   private:
-	void add_package(PackageInfo const& info) final {
-		auto const& package = m_packages.emplace_back(m_git, m_workspace.get_src_dir(), info);
+	void setup(Info const& info) final {
+		m_logger.verbosity = info.verbosity;
+		m_workspace.setup(info.working_dir, info.source_dir);
+	}
+
+	void add_package(PackageInfo const& package_info) final {
+		auto const& package = m_packages.emplace_back(m_git, m_workspace.get_src_dir(), package_info);
 		m_logger("== Package setup complete: {}\n", package.get_subdir().generic_string());
 	}
 
@@ -33,6 +37,12 @@ class Instance : public dz::Instance {
 	std::vector<Package> m_packages{};
 };
 } // namespace
-} // namespace dz::detail
+} // namespace detail
+
+void Instance::vendor(std::span<PackageInfo const> package_infos) {
+	for (auto const& package_info : package_infos) { add_package(package_info); }
+	create_zip();
+}
+} // namespace dz
 
 auto dz::create_instance(InstanceInfo const& info) -> std::unique_ptr<Instance> { return std::make_unique<detail::Instance>(info); }
