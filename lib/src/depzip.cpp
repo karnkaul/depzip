@@ -4,9 +4,7 @@
 #include <detail/programs/git.hpp>
 #include <detail/programs/zip.hpp>
 #include <detail/workspace.hpp>
-#include <chrono>
-#include <print>
-#include <thread>
+#include <unordered_map>
 
 namespace dz::detail {
 using namespace std::chrono_literals;
@@ -50,6 +48,54 @@ class Instance : public dz::Instance {
 	std::vector<Package> m_packages{};
 };
 } // namespace
+
+void Util::rm_rf(fs::path const& path) const {
+	if (!fs::exists(path)) { return; }
+	logger("-- Deleting {}", path.generic_string());
+
+	auto const extract_failed_path = [](std::string_view const fs_err) -> std::string {
+		auto const lbrace = fs_err.find_last_of('[');
+		if (lbrace == std::string_view::npos) { return {}; }
+		auto ret = fs_err.substr(lbrace + 1);
+		auto const rbrace = ret.find(']');
+		if (rbrace < ret.size()) { ret.remove_suffix(ret.size() - rbrace); }
+		return std::string{ret};
+	};
+
+	static constexpr auto max_iterations_v{100};
+	auto retry_map = std::unordered_map<std::string, int>{};
+	auto iteration = 1;
+	for (; iteration <= max_iterations_v; ++iteration) {
+		try {
+			fs::remove_all(path);
+			return;
+		} catch (fs::filesystem_error const& e) {
+			if (iteration >= max_iterations_v) {
+				// loop is over, just throw.
+				break;
+			}
+
+			auto const failed_path = extract_failed_path(e.what());
+			if (failed_path.empty()) {
+				// can't fix perms if there's no path.
+				std::rethrow_exception(std::current_exception());
+			}
+
+			auto& retry_attempt = ++retry_map[failed_path];
+			static constexpr auto max_attempts_v{10};
+			if (retry_attempt >= max_attempts_v) {
+				// problematic path has exhausted retry attempts.
+				std::rethrow_exception(std::current_exception());
+			}
+
+			logger("{}\n  changing perms and retrying... (attempt: {}/{}, iteration: {}/{})", e.what(), retry_attempt++, max_attempts_v, iteration,
+				   max_iterations_v);
+			fs::permissions(failed_path, fs::perms::owner_write | fs::perms::others_write);
+		}
+	}
+
+	throw Panic{std::format("Failed to delete {} ({} iterations)", path.generic_string(), iteration)};
+}
 } // namespace dz::detail
 
 auto dz::create_instance() -> std::unique_ptr<Instance> { return std::make_unique<detail::Instance>(); }
