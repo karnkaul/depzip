@@ -7,8 +7,6 @@
 #include <unordered_map>
 
 namespace dz::detail {
-using namespace std::chrono_literals;
-
 namespace {
 class Instance : public dz::Instance {
 	void vendor(std::span<PackageInfo const> packages, Config const& config) final {
@@ -81,14 +79,14 @@ void Util::rm_rf(fs::path const& path) const {
 				std::rethrow_exception(std::current_exception());
 			}
 
-			auto& retry_attempt = ++retry_map[failed_path];
+			auto const retry_attempt = ++retry_map[failed_path];
 			static constexpr auto max_attempts_v{10};
 			if (retry_attempt >= max_attempts_v) {
 				// problematic path has exhausted retry attempts.
 				std::rethrow_exception(std::current_exception());
 			}
 
-			logger("{}\n  changing perms and retrying... (attempt: {}/{}, iteration: {}/{})", e.what(), retry_attempt++, max_attempts_v, iteration,
+			logger("{}\n  changing perms and retrying... (attempt: {}/{}, iteration: {}/{})", e.what(), retry_attempt, max_attempts_v, iteration,
 				   max_iterations_v);
 			fs::permissions(failed_path, fs::perms::owner_write | fs::perms::others_write);
 		}
