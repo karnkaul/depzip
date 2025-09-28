@@ -2,5 +2,13 @@
 #include <cstdint>
 
 namespace dz {
-enum class Verbosity : std::int8_t { Default, Silent, Verbose };
+/// \brief Output verbosity.
+enum class Verbosity : std::int8_t {
+	/// \brief Host command outputs.
+	Default,
+	/// \brief No output.
+	Silent,
+	/// \brief Host command outputs and action logs.
+	Verbose
+};
 } // namespace dz
