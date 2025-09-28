@@ -19,7 +19,7 @@ TEST(instance) {
 
 	auto const packages = std::array{
 		dz::PackageInfo{.repo_uri = "karnkaul/depzip"},
-		dz::PackageInfo{.repo_uri = "glfw/glfw", .git_tag = "0.3.4", .remove_subpaths = {"docs", "examples"}},
+		dz::PackageInfo{.repo_uri = "glfw/glfw", .git_tag = "3.4", .remove_subpaths = {"docs", "examples"}},
 	};
 
 	instance->vendor(packages, config);

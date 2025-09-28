@@ -12,7 +12,7 @@ struct PackageInfo {
 	/// \brief Repository host URL (eg github.com).
 	std::string_view repo_provider{"https://github.com/"};
 	/// \brief Git commit-ish to checkout.
-	std::string_view git_tag{"main"};
+	std::string_view git_tag{};
 	/// \brief Subdirectory to clone to, can be empty.
 	std::string_view subdir_name{};
 	/// \brief Sub-paths to remove after cloning (eg docs, examples).

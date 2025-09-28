@@ -5,7 +5,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_DEBUG_POSTFIX "-d")
 
-set(build_version 0.1.1)
+set(build_version 0.1.2)
 project(depzip VERSION ${build_version})
 
 option("DEPZIP_BUILD_TESTS" "Build depzip tests" ${PROJECT_IS_TOP_LEVEL})

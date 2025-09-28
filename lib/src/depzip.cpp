@@ -55,6 +55,7 @@ void dz::from_json(dj::Json const& json, PackageInfo& package) {
 	} else {
 		from_json(json["repo_uri"], package.repo_uri);
 		from_json(json["repo_provider"], package.repo_provider, package.repo_provider);
+		from_json(json["git_tag"], package.git_tag, package.git_tag);
 		from_json(json["subdir_name"], package.subdir_name, package.subdir_name);
 		for (auto const& subpath : json["remove_subpaths"].as_array()) { from_json(subpath, package.remove_subpaths.emplace_back()); }
 	}
@@ -63,6 +64,7 @@ void dz::from_json(dj::Json const& json, PackageInfo& package) {
 void dz::to_json(dj::Json& json, PackageInfo const& package) {
 	to_json(json["repo_uri"], package.repo_uri);
 	to_json(json["repo_provider"], package.repo_provider);
+	to_json(json["git_tag"], package.git_tag);
 	to_json(json["subdir_name"], package.subdir_name);
 	for (auto const subpath : package.remove_subpaths) { to_json(json["remove_subpaths"].push_back(), subpath); }
 }

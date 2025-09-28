@@ -12,7 +12,7 @@ class Package {
 		if (m_subdir.empty()) { m_subdir = fs::path{info.repo_uri}.filename(); }
 
 		auto const clone_params = Git::Clone{
-			.url = std::format("{}/{}", info.repo_provider, info.repo_uri),
+			.url = std::format("{}{}", info.repo_provider, info.repo_uri),
 			.tag = info.git_tag,
 			.dest_dir = src_dir / m_subdir,
 		};
