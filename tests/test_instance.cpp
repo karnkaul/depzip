@@ -1,5 +1,4 @@
 #include <depzip/instance.hpp>
-#include <depzip/panic.hpp>
 #include <klib/unit_test.hpp>
 #include <array>
 #include <filesystem>

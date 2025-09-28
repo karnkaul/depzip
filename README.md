@@ -6,6 +6,10 @@
 
 ## Usage
 
+[Manifest schema](depzip_schema.json)
+
+[Example](ext/depzip.json)
+
 WIP
 
 ## Contributing
