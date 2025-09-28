@@ -1,8 +1,11 @@
 #include <depzip/instance.hpp>
 #include <depzip/json_io.hpp>
+#include <depzip/panic.hpp>
+#include <detail/logger.hpp>
 #include <detail/package.hpp>
 #include <detail/programs/git.hpp>
 #include <detail/programs/zip.hpp>
+#include <detail/string_builder.hpp>
 #include <detail/workspace.hpp>
 #include <unordered_map>
 
@@ -46,6 +49,48 @@ class Instance : public dz::Instance {
 	std::vector<Package> m_packages{};
 };
 } // namespace
+
+auto StringBuilder::append(std::string_view const text) -> StringBuilder& {
+	if (text.empty()) { return *this; }
+	if (value.empty()) {
+		value = text;
+	} else {
+		std::format_to(std::back_inserter(value), " {}", text);
+	}
+	return *this;
+}
+
+auto Shell::execute(std::string_view const args, Verbosity const verbosity) const -> Result {
+	auto const line = StringBuilder{.value = m_command}.append(args, create_suffix(verbosity)).value;
+	print_if_verbose(line, verbosity);
+	return std::system(line.c_str()); // NOLINT(concurrency-mt-unsafe)
+}
+
+auto Shell::create_suffix(Verbosity const verbosity) -> std::string_view {
+	if (verbosity != Verbosity::Silent) { return {}; }
+#if defined(_WIN32) && !defined(__MINGW__)
+	return " >nul 2>nul";
+#else
+	return "> /dev/null 2>&1";
+#endif
+}
+
+void Shell::print_if_verbose(std::string_view const line, Verbosity const verbosity) {
+	if (verbosity != Verbosity::Verbose) { return; }
+	std::println("-- {}", line);
+}
+
+void Util::mkdir(fs::path const& path) const {
+	if (path == ".") { return; }
+	logger("-- Creating directory {}", path.generic_string());
+	if (!fs::create_directories(path)) { throw Panic{std::format("Failed to create directory {}", path.generic_string())}; }
+}
+
+void Util::cd(fs::path const& path) const {
+	if (path.empty() || path == ".") { return; }
+	logger("-- Changing pwd to {}", path.generic_string());
+	fs::current_path(path);
+}
 
 void Util::rm_rf(fs::path const& path) const {
 	if (!fs::exists(path)) { return; }
@@ -93,6 +138,54 @@ void Util::rm_rf(fs::path const& path) const {
 	}
 
 	throw Panic{std::format("Failed to delete {} ({} iterations)", path.generic_string(), iteration)};
+}
+
+Program::Program(Util const& util, std::string command, std::string_view const does_exist_args) : Shell(std::move(command)), util(util) {
+	if (!Shell::execute(does_exist_args, Verbosity::Silent)) { throw Panic{std::format("{} not found", get_command())}; }
+}
+
+auto Program::execute(std::string_view const args) const -> Result { return Shell::execute(args, util.logger.verbosity); }
+
+void Git::clone(Clone const& params) const {
+	if (fs::exists(params.dest_dir)) { util.rm_rf(params.dest_dir); }
+	auto builder = StringBuilder{.value = std::format("{} --depth={}", Clone::name_v, params.depth)};
+	if (!params.tag.empty()) { builder.append(std::format("--branch={}", params.tag)); }
+	builder.append(params.url).append(params.dest_dir.string());
+	if (!execute(builder.value)) { throw Panic{std::format("Failed to clone {}@{}", params.tag, params.url)}; }
+}
+
+auto Zip::create_archive(fs::path const& dir_to_add) const -> std::string {
+	auto const zip_name = std::format("{}.zip", dir_to_add.filename().string());
+	if (fs::exists(zip_name)) { util.rm_rf(zip_name); }
+	auto const args = build_args(zip_name, dir_to_add.string());
+	if (!execute(args)) { throw Panic{std::format("Failed to create ZIP {}", zip_name)}; }
+	return zip_name;
+}
+
+auto Zip::build_args(std::string_view const zip_name, std::string_view const dir_to_add) -> std::string {
+#if defined(_WIN32)
+	return std::format("-acf {} {}", zip_name, dir_to_add);
+#else
+	return std::format("-r {} {}", zip_name, dir_to_add);
+#endif
+}
+
+Package::Package(Git const& git, fs::path const& src_dir, Info const& info) {
+	m_subdir = fs::path{info.subdir_name};
+	if (m_subdir.empty()) { m_subdir = fs::path{info.repo_uri}.filename(); }
+
+	auto const clone_params = Git::Clone{
+		.url = std::format("{}{}", info.repo_provider, info.repo_uri),
+		.tag = info.git_tag,
+		.dest_dir = src_dir / m_subdir,
+	};
+	git.clone(clone_params);
+
+	git.util.rm_rf(clone_params.dest_dir / ".git");
+	for (auto const& subpath : info.remove_subpaths) {
+		auto const path = clone_params.dest_dir / subpath;
+		git.util.rm_rf(path);
+	}
 }
 } // namespace dz::detail
 
