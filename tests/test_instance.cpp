@@ -22,9 +22,7 @@ TEST(instance) {
 		dz::PackageInfo{.repo_uri = "glfw/glfw", .git_tag = "0.3.4", .remove_subpaths = {"docs", "examples"}},
 	};
 
-	try {
-		instance->vendor(packages, config);
-	} catch (dz::Panic const& panic) { ASSERT(false); }
+	instance->vendor(packages, config);
 
 	fs::current_path(pwd);
 
