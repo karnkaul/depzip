@@ -5,10 +5,12 @@
 namespace dz {
 /// \brief Package description.
 struct PackageInfo {
+	/// \brief Sub-URI for a specific repository (eg octocat/Hello-World).
+	/// Required parameter.
+	std::string_view repo_uri;
+
 	/// \brief Repository host URL (eg github.com).
 	std::string_view repo_provider{"https://github.com/"};
-	/// \brief Sub-URI for a specific repository (eg octocat/Hello-World).
-	std::string_view repo_uri{};
 	/// \brief Git commit-ish to checkout.
 	std::string_view git_tag{"main"};
 	/// \brief Subdirectory to clone to, can be empty.

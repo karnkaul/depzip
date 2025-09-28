@@ -1,22 +1,11 @@
 #pragma once
+#include <depzip/config.hpp>
 #include <depzip/package_info.hpp>
 #include <depzip/verbosity.hpp>
 #include <memory>
 #include <span>
 
 namespace dz {
-/// \brief Configuration for a vendor request.
-struct Config {
-	/// \brief Working directory.
-	std::string_view working_dir{"."};
-	/// \brief Source directory.
-	/// All repositories are cloned here.
-	/// This is the directory that gets archived into a ZIP file.
-	std::string_view source_dir{"src"};
-	/// \brief Output verbosity.
-	Verbosity verbosity{Verbosity::Default};
-};
-
 /// \brief Opaque interface for primary API.
 class Instance {
   public:

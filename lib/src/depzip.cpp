@@ -1,4 +1,5 @@
 #include <depzip/instance.hpp>
+#include <depzip/json_io.hpp>
 #include <detail/package.hpp>
 #include <detail/programs/git.hpp>
 #include <detail/programs/zip.hpp>
@@ -41,3 +42,43 @@ class Instance : public dz::Instance {
 } // namespace dz::detail
 
 auto dz::create_instance() -> std::unique_ptr<Instance> { return std::make_unique<detail::Instance>(); }
+
+void dz::from_json(dj::Json const& json, PackageInfo& package) {
+	if (json.is_string()) {
+		from_json(json, package.repo_uri);
+	} else {
+		from_json(json["repo_uri"], package.repo_uri);
+		from_json(json["repo_provider"], package.repo_provider, package.repo_provider);
+		from_json(json["subdir_name"], package.subdir_name, package.subdir_name);
+		for (auto const& subpath : json["remove_subpaths"].as_array()) { from_json(subpath, package.remove_subpaths.emplace_back()); }
+	}
+}
+
+void dz::to_json(dj::Json& json, PackageInfo const& package) {
+	to_json(json["repo_uri"], package.repo_uri);
+	to_json(json["repo_provider"], package.repo_provider);
+	to_json(json["subdir_name"], package.subdir_name);
+	for (auto const subpath : package.remove_subpaths) { to_json(json["remove_subpaths"].push_back(), subpath); }
+}
+
+void dz::from_json(dj::Json const& json, Config& config) {
+	from_json(json["source_dir"], config.source_dir);
+	from_json(json["working_dir"], config.working_dir);
+	config.verbosity = to_verbosity(json["verbosity"].as_string_view());
+}
+
+void dz::to_json(dj::Json& json, Config const& config) {
+	to_json(json["source_dir"], config.source_dir);
+	to_json(json["working_dir"], config.working_dir);
+	json["verbosity"] = to_string_view(config.verbosity);
+}
+
+void dz::from_json(dj::Json const& json, VendorParams& params) {
+	for (auto const& package : json["packages"].as_array()) { from_json(package, params.packages.emplace_back()); }
+	from_json(json["config"], params.config);
+}
+
+void dz::to_json(dj::Json& json, VendorParams const& params) {
+	for (auto const& package : params.packages) { to_json(json["packages"].push_back(), package); }
+	to_json(json["config"], params.config);
+}
