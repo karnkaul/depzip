@@ -1,0 +1,51 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema",
+  "title": "depzip manifest",
+  "type": "object",
+  "description": "JSON file listing all desired packages",
+  "properties": {
+    "packages": {
+      "type": "array",
+      "description": "Array of packages",
+      "items": {
+        "type": [
+          "object",
+          "string"
+        ],
+        "properties": {
+          "repo_uri": {
+            "type": "string",
+            "description": "Repository sub-URI (eg octocat/Hello-World)"
+          },
+          "repo_provider": {
+            "type": "string",
+            "description": "Repository host URL (eg https://github.com/, optional)",
+            "default": "https://github.com/"
+          },
+          "git_tag": {
+            "type": "string",
+            "description": "git commit-ish to checkout (optional)"
+          },
+          "subdir_name": {
+            "type": "string",
+            "description": "Custom subdirectory name (optional)"
+          },
+          "remove_subpaths": {
+            "type": "array",
+            "description": "Subpaths to remove after checkout",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "repo_uri"
+        ]
+      },
+      "minItems": 1
+    }
+  },
+  "required": [
+    "packages"
+  ]
+}
