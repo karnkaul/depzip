@@ -4,7 +4,7 @@ if(NOT "${sources}" STREQUAL "")
   add_executable(${PROJECT_NAME}-tests)
   target_link_libraries(${PROJECT_NAME}-tests PRIVATE
     klib::klib-test-main
-    depzip::lib
+    depzip::depzip-lib
   )
   target_include_directories(${PROJECT_NAME}-tests PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}/../lib/src"
