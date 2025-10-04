@@ -1,7 +1,7 @@
 project(depzip-lib VERSION ${build_version})
 
 add_library(${PROJECT_NAME})
-add_library(depzip::lib ALIAS ${PROJECT_NAME})
+add_library(depzip::depzip-lib ALIAS ${PROJECT_NAME})
 
 target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_23)
 

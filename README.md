@@ -37,7 +37,7 @@ Run `depzip --help` or `depzip --usage` for more info.
 
 ### Library
 
-WIP
+[API Reference](https://karnkaul.github.io/depzip/).
 
 ## Contributing
 

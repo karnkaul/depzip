@@ -20,7 +20,7 @@ class Instance {
 
 	/// \brief Clone packages and create ZIP archive.
 	/// Throws Panic on fatal errors.
-	/// \param pacakges Packages to clone and include in the archive.
+	/// \param packages Packages to clone and include in the archive.
 	/// \param config Vendoring configuration.
 	virtual void vendor(std::span<PackageInfo const> packages, Config const& config = {}) noexcept(false) = 0;
 };
