@@ -15,7 +15,7 @@ jobs:
             sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-14 10
             sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-14 10
       - name: configure
-        run: cmake -S . --preset=ninja-gcc -B build
+        run: cmake -S . --preset=ninja-gcc -B build -DDEPZIP_INSTALL=ON -DDEPZIP_BUILD_TESTS=OFF
       - name: build release
         run: cmake --build build --config=Release -- -v
       - name: install
@@ -39,7 +39,7 @@ jobs:
             sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-14 10
             sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-14 10
       - name: configure
-        run: cmake -S . --preset=ninja-gcc -B build
+        run: cmake -S . --preset=ninja-gcc -B build -DDEPZIP_INSTALL=ON -DDEPZIP_BUILD_TESTS=OFF
       - name: build release
         run: cmake --build build --config=Release -- -v
       - name: install
@@ -58,7 +58,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: configure
-        run: cmake -S . --preset=ninja-clang -B build
+        run: cmake -S . --preset=ninja-clang -B build -DDEPZIP_INSTALL=ON -DDEPZIP_BUILD_TESTS=OFF
       - name: build release
         run: cmake --build build --config=Release -- -v
       - name: install
