@@ -5,12 +5,16 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_DEBUG_POSTFIX "-d")
 
-set(build_version 0.1.4)
+include(version.cmake)
 set(package_name depzip)
+set(build_version ${depzip_version})
+
 project(depzip VERSION ${build_version})
 
 option(DEPZIP_INSTALL "Setup depzip install" ${PROJECT_IS_TOP_LEVEL})
 option(DEPZIP_BUILD_TESTS "Build depzip tests" ${PROJECT_IS_TOP_LEVEL})
+
+configure_file(Doxyfile.in Doxyfile @ONLY)
 
 add_subdirectory(ext)
 add_subdirectory(lib)
