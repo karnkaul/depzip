@@ -55,6 +55,8 @@ class App {
 	}
 
 	void run() {
+		if (m_config.verbosity != Verbosity::Silent) { std::println("depzip v{}", build_version_v); }
+
 		read_manifest();
 		if (m_manifest.packages.empty()) {
 			std::println("Nothing to vendor");
