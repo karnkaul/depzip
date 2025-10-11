@@ -1,10 +1,9 @@
 #pragma once
 #include <depzip/build_version.hpp>
 #include <depzip/config.hpp>
-#include <depzip/package_info.hpp>
+#include <depzip/manifest.hpp>
 #include <depzip/verbosity.hpp>
 #include <memory>
-#include <span>
 
 namespace dz {
 /// \brief Opaque interface for primary API.
@@ -20,9 +19,9 @@ class Instance {
 
 	/// \brief Clone packages and create ZIP archive.
 	/// Throws Panic on fatal errors.
-	/// \param packages Packages to clone and include in the archive.
+	/// \param manifest Manifest description.
 	/// \param config Vendoring configuration.
-	virtual void vendor(std::span<PackageInfo const> packages, Config const& config = {}) noexcept(false) = 0;
+	virtual void vendor(Manifest const& manifest, Config const& config = {}) noexcept(false) = 0;
 };
 
 /// \returns A concrete Instance.

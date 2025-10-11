@@ -1,6 +1,5 @@
 #include <depzip/instance.hpp>
 #include <klib/unit_test.hpp>
-#include <array>
 #include <filesystem>
 
 namespace {
@@ -16,12 +15,15 @@ TEST(instance) {
 		.verbosity = dz::Verbosity::Verbose,
 	};
 
-	auto const packages = std::array{
-		dz::PackageInfo{.repo_uri = "karnkaul/depzip"},
-		dz::PackageInfo{.repo_uri = "glfw/glfw", .git_tag = "3.4", .remove_subpaths = {"docs", "examples"}},
+	auto const manifest = dz::Manifest{
+		.packages =
+			{
+				dz::PackageInfo{.uri = "karnkaul/depzip.git"},
+				dz::PackageInfo{.uri = "glfw/glfw", .branch = "3.4", .remove_subpaths = {"docs", "examples"}},
+			},
 	};
 
-	instance->vendor(packages, config);
+	instance->vendor(manifest, config);
 
 	fs::current_path(pwd);
 

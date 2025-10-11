@@ -11,16 +11,23 @@
 
 namespace dz::detail {
 namespace {
+[[nodiscard]] auto contains_host(fs::path uri) -> bool {
+	uri = uri.parent_path();
+	if (uri.empty()) { return true; }
+	return uri.string().find_first_of(":./") != std::string::npos;
+}
+
 class Instance : public dz::Instance {
-	void vendor(std::span<PackageInfo const> packages, Config const& config) final {
+	void vendor(Manifest const& manifest, Config const& config) final {
 		setup(config);
 
-		if (packages.empty()) {
-			std::println("Nothing to vendor");
+		if (manifest.packages.empty()) {
+			throw Panic{"Nothing to vendor"};
 			return;
 		}
 
-		for (auto const& package_info : packages) { add_package(package_info); }
+		m_git.host.set_value(manifest.default_host);
+		for (auto const& package_info : manifest.packages) { add_package(package_info); }
 		create_zip();
 	}
 
@@ -146,12 +153,31 @@ Program::Program(Util const& util, std::string command, std::string_view const d
 
 auto Program::execute(std::string_view const args) const -> Result { return Shell::execute(args, util.logger.verbosity); }
 
+void Git::Host::set_value(std::string_view const value) {
+	m_value = value;
+	if (m_value.empty()) {
+		static constexpr std::string_view default_host_v{"https://github.com"};
+		m_value = default_host_v;
+	} else if (m_value.ends_with('/')) {
+		m_value.pop_back();
+	}
+}
+
+auto Git::Host::to_url(std::string_view const uri) const -> std::string {
+	if (contains_host(uri)) { return std::string{uri}; }
+	return std::format("{}/{}", m_value, uri);
+}
+
 void Git::clone(Clone const& params) const {
 	if (fs::exists(params.dest_dir)) { util.rm_rf(params.dest_dir); }
 	auto builder = StringBuilder{.value = std::format("{} --depth={}", Clone::name_v, params.depth)};
-	if (!params.tag.empty()) { builder.append(std::format("--branch={}", params.tag)); }
-	builder.append(params.url).append(params.dest_dir.string());
-	if (!execute(builder.value)) { throw Panic{std::format("Failed to clone {}@{}", params.tag, params.url)}; }
+	if (!params.branch.empty()) { builder.append(std::format("--branch={}", params.branch)); }
+	auto const url = host.to_url(params.uri);
+	builder.append(url).append(params.dest_dir.string());
+	if (!execute(builder.value)) {
+		if (params.branch.empty()) { throw Panic{std::format("Failed to clone {}", url)}; }
+		throw Panic{std::format("Failed to clone {} (branch: {})", url, params.branch)};
+	}
 }
 
 auto Zip::create_archive(fs::path const& dir_to_add) const -> std::string {
@@ -171,12 +197,12 @@ auto Zip::build_args(std::string_view const zip_name, std::string_view const dir
 }
 
 Package::Package(Git const& git, fs::path const& src_dir, Info const& info) {
-	m_subdir = fs::path{info.subdir_name};
-	if (m_subdir.empty()) { m_subdir = fs::path{info.repo_uri}.filename(); }
+	m_subdir = fs::path{info.subdir};
+	if (m_subdir.empty()) { m_subdir = fs::path{info.uri}.stem(); }
 
 	auto const clone_params = Git::Clone{
-		.url = std::format("{}{}", info.repo_provider, info.repo_uri),
-		.tag = info.git_tag,
+		.uri = info.uri,
+		.branch = info.branch,
 		.dest_dir = src_dir / m_subdir,
 	};
 	git.clone(clone_params);
@@ -192,29 +218,25 @@ Package::Package(Git const& git, fs::path const& src_dir, Info const& info) {
 auto dz::create_instance() -> std::unique_ptr<Instance> { return std::make_unique<detail::Instance>(); }
 
 void dz::from_json(dj::Json const& json, PackageInfo& package) {
-	if (json.is_string()) {
-		from_json(json, package.repo_uri);
-	} else {
-		from_json(json["repo_uri"], package.repo_uri);
-		from_json(json["repo_provider"], package.repo_provider, package.repo_provider);
-		from_json(json["git_tag"], package.git_tag, package.git_tag);
-		from_json(json["subdir_name"], package.subdir_name, package.subdir_name);
-		for (auto const& subpath : json["remove_subpaths"].as_array()) { from_json(subpath, package.remove_subpaths.emplace_back()); }
-	}
+	from_json(json["uri"], package.uri);
+	from_json(json["branch"], package.branch, package.branch);
+	from_json(json["subdir"], package.subdir, package.subdir);
+	for (auto const& subpath : json["remove_subpaths"].as_array()) { from_json(subpath, package.remove_subpaths.emplace_back()); }
 }
 
 void dz::to_json(dj::Json& json, PackageInfo const& package) {
-	to_json(json["repo_uri"], package.repo_uri);
-	to_json(json["repo_provider"], package.repo_provider);
-	to_json(json["git_tag"], package.git_tag);
-	to_json(json["subdir_name"], package.subdir_name);
+	to_json(json["uri"], package.uri);
+	to_json(json["branch"], package.branch);
+	to_json(json["subdir"], package.subdir);
 	for (auto const subpath : package.remove_subpaths) { to_json(json["remove_subpaths"].push_back(), subpath); }
 }
 
 void dz::from_json(dj::Json const& json, Manifest& manifest) {
 	for (auto const& package : json["packages"].as_array()) { from_json(package, manifest.packages.emplace_back()); }
+	from_json(json["default_host"], manifest.default_host);
 }
 
 void dz::to_json(dj::Json& json, Manifest const& manifest) {
 	for (auto const& package : manifest.packages) { to_json(json["packages"].push_back(), package); }
+	if (!manifest.default_host.empty()) { to_json(json["default_host"], manifest.default_host); }
 }
