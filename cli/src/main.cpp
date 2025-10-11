@@ -5,20 +5,20 @@
 #include <klib/args/parse.hpp>
 #include <array>
 #include <exception>
+#include <filesystem>
 #include <print>
 
 namespace dz::cli {
 namespace {
+namespace fs = std::filesystem;
+
 class App {
   public:
 	auto run(int const argc, char const* const* argv) -> int {
 		auto const parse_result = parse_args(argc, argv);
 		if (parse_result.early_return()) { return parse_result.get_return_code(); }
 
-		read_manifest();
-		m_instance = create_instance();
-		m_instance->vendor(m_manifest.packages, m_config);
-
+		run();
 		return EXIT_SUCCESS;
 	}
 
@@ -44,10 +44,25 @@ class App {
 	}
 
 	void read_manifest() {
-		auto result = dj::Json::from_file(m_manifest_path);
-		if (!result) { throw Panic{std::format("Failed to read manifest {}", m_manifest_path)}; }
+		auto const manifest_path = [this] {
+			if (fs::is_symlink(m_manifest_path)) { return fs::read_symlink(m_manifest_path); }
+			return fs::path{m_manifest_path};
+		}();
+		auto result = dj::Json::from_file(manifest_path.string(), dj::ParseMode::Jsonc);
+		if (!result) { throw Panic{std::format("Failed to read manifest {}", manifest_path.generic_string())}; }
 		m_manifest_json = std::move(*result);
 		from_json(m_manifest_json, m_manifest);
+	}
+
+	void run() {
+		read_manifest();
+		if (m_manifest.packages.empty()) {
+			std::println("Nothing to vendor");
+			return;
+		}
+
+		m_instance = create_instance();
+		m_instance->vendor(m_manifest, m_config);
 	}
 
 	std::string_view m_manifest_path{"depzip.json"};

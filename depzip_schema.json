@@ -8,25 +8,17 @@
       "type": "array",
       "description": "Array of packages",
       "items": {
-        "type": [
-          "object",
-          "string"
-        ],
+        "type": "object",
         "properties": {
-          "repo_uri": {
+          "uri": {
             "type": "string",
             "description": "Repository sub-URI (eg octocat/Hello-World)"
           },
-          "repo_provider": {
-            "type": "string",
-            "description": "Repository host URL (eg https://github.com/, optional)",
-            "default": "https://github.com/"
-          },
-          "git_tag": {
+          "branch": {
             "type": "string",
             "description": "git commit-ish to checkout (optional)"
           },
-          "subdir_name": {
+          "subdir": {
             "type": "string",
             "description": "Custom subdirectory name (optional)"
           },
@@ -39,10 +31,15 @@
           }
         },
         "required": [
-          "repo_uri"
+          "uri"
         ]
       },
       "minItems": 1
+    },
+    "host": {
+      "type": "string",
+      "description": "Default repository host URL (eg https://github.com, optional)",
+      "default": "https://github.com"
     }
   },
   "required": [
