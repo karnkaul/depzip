@@ -18,5 +18,7 @@ struct PackageInfo {
 	std::string_view subdir{};
 	/// \brief Sub-paths to remove after cloning (eg docs, examples).
 	std::vector<std::string_view> remove_subpaths{};
+	/// \brief Custom shell command(s) to run, eg 'cmake -P script.cmake'.
+	std::string_view custom_command{};
 };
 } // namespace dz

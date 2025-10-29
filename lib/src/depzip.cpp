@@ -208,6 +208,10 @@ Package::Package(Git const& git, fs::path const& src_dir, Info const& info) {
 		auto const path = clone_params.dest_dir / subpath;
 		git.util.rm_rf(path);
 	}
+
+	if (info.custom_command.empty()) { return; }
+	auto const result = shell::execute(git.util.logger.verbosity, info.custom_command);
+	if (!result) { throw Panic{std::format("Failed to execute custom command for {} (exit code: {})", get_subdir().generic_string(), result.get_code())}; }
 }
 } // namespace dz::detail
 
@@ -218,13 +222,15 @@ void dz::from_json(dj::Json const& json, PackageInfo& package) {
 	from_json(json["branch"], package.branch, package.branch);
 	from_json(json["subdir"], package.subdir, package.subdir);
 	for (auto const& subpath : json["remove_subpaths"].as_array()) { from_json(subpath, package.remove_subpaths.emplace_back()); }
+	from_json(json["custom_command"], package.custom_command);
 }
 
 void dz::to_json(dj::Json& json, PackageInfo const& package) {
-	to_json(json["uri"], package.uri);
-	to_json(json["branch"], package.branch);
-	to_json(json["subdir"], package.subdir);
+	if (!package.uri.empty()) { to_json(json["uri"], package.uri); }
+	if (!package.branch.empty()) { to_json(json["branch"], package.branch); }
+	if (!package.subdir.empty()) { to_json(json["subdir"], package.subdir); }
 	for (auto const subpath : package.remove_subpaths) { to_json(json["remove_subpaths"].push_back(), subpath); }
+	if (!package.custom_command.empty()) { to_json(json["custom_command"], package.custom_command); }
 }
 
 void dz::from_json(dj::Json const& json, Manifest& manifest) {
