@@ -1,1 +1,1 @@
-set(depzip_version 0.3.0)
+set(depzip_version 0.3.1)
