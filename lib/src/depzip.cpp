@@ -5,6 +5,7 @@
 #include <detail/package.hpp>
 #include <detail/programs/git.hpp>
 #include <detail/programs/zip.hpp>
+#include <detail/shell.hpp>
 #include <detail/string_builder.hpp>
 #include <detail/workspace.hpp>
 #include <unordered_map>
@@ -15,6 +16,15 @@ namespace {
 	uri = uri.parent_path();
 	if (uri.empty()) { return true; }
 	return uri.string().find_first_of(":./") != std::string::npos;
+}
+
+[[nodiscard]] constexpr auto create_suffix(Verbosity const verbosity) -> std::string_view {
+	if (verbosity != Verbosity::Silent) { return {}; }
+#if defined(_WIN32) && !defined(__MINGW__)
+	return " >nul 2>nul";
+#else
+	return "> /dev/null 2>&1";
+#endif
 }
 
 class Instance : public dz::Instance {
@@ -67,24 +77,10 @@ auto StringBuilder::append(std::string_view const text) -> StringBuilder& {
 	return *this;
 }
 
-auto Shell::execute(std::string_view const args, Verbosity const verbosity) const -> Result {
-	auto const line = StringBuilder{.value = m_command}.append(args, create_suffix(verbosity)).value;
-	print_if_verbose(line, verbosity);
-	return std::system(line.c_str()); // NOLINT(concurrency-mt-unsafe)
-}
-
-auto Shell::create_suffix(Verbosity const verbosity) -> std::string_view {
-	if (verbosity != Verbosity::Silent) { return {}; }
-#if defined(_WIN32) && !defined(__MINGW__)
-	return " >nul 2>nul";
-#else
-	return "> /dev/null 2>&1";
-#endif
-}
-
-void Shell::print_if_verbose(std::string_view const line, Verbosity const verbosity) {
-	if (verbosity != Verbosity::Verbose) { return; }
-	std::println("-- {}", line);
+auto shell::execute(Verbosity const verbosity, std::string_view const command, std::string_view const args) -> Result {
+	auto const expr = StringBuilder::build(command, args, create_suffix(verbosity));
+	if (verbosity == Verbosity::Verbose) { std::println("-- {}", expr); }
+	return std::system(expr.c_str()); // NOLINT(concurrency-mt-unsafe)
 }
 
 void Util::mkdir(fs::path const& path) const {
@@ -147,11 +143,11 @@ void Util::rm_rf(fs::path const& path) const {
 	throw Panic{std::format("Failed to delete {} ({} iterations)", path.generic_string(), iteration)};
 }
 
-Program::Program(Util const& util, std::string command, std::string_view const does_exist_args) : Shell(std::move(command)), util(util) {
-	if (!Shell::execute(does_exist_args, Verbosity::Silent)) { throw Panic{std::format("{} not found", get_command())}; }
+Program::Program(Util const& util, std::string_view const command, std::string_view const does_exist_args) : util(util), m_command(command) {
+	if (!shell::execute(Verbosity::Silent, command, does_exist_args)) { throw Panic{std::format("{} not found", get_command())}; }
 }
 
-auto Program::execute(std::string_view const args) const -> Result { return Shell::execute(args, util.logger.verbosity); }
+auto Program::execute(std::string_view const args) const -> bool { return shell::execute(util.logger.verbosity, m_command, args).is_success(); }
 
 void Git::Host::set_value(std::string_view const value) {
 	m_value = value;

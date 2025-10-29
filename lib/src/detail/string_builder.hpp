@@ -4,6 +4,11 @@
 
 namespace dz::detail {
 struct StringBuilder {
+	template <std::convertible_to<std::string_view>... Ts>
+	[[nodiscard]] static auto build(Ts const&... ts) -> std::string {
+		return std::move(StringBuilder{}.append(ts...).value);
+	}
+
 	auto append(std::string_view text) -> StringBuilder&;
 
 	template <std::convertible_to<std::string_view>... Ts>

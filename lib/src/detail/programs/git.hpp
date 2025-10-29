@@ -30,7 +30,7 @@ class Git : public Program {
 		int depth{1};
 	};
 
-	explicit Git(Util const& util) : Program(util, std::string{name_v}) {}
+	explicit Git(Util const& util) : Program(util, name_v) {}
 
 	void clone(Clone const& params) const;
 
