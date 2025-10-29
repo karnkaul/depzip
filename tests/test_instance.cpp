@@ -19,7 +19,12 @@ TEST(instance) {
 		.packages =
 			{
 				dz::PackageInfo{.uri = "karnkaul/depzip.git"},
-				dz::PackageInfo{.uri = "glfw/glfw", .branch = "3.4", .remove_subpaths = {"docs", "examples"}},
+				dz::PackageInfo{
+					.uri = "glfw/glfw",
+					.branch = "3.4",
+					.remove_subpaths = {"docs", "examples"},
+					.custom_command = "cmake -P src/glfw/CMake/GenerateMappings.cmake src/glfw/src/mappings.h.in src/glfw/src/mappings.h",
+				},
 			},
 	};
 
