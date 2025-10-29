@@ -12,7 +12,7 @@ class Zip : public Program {
 		"zip";
 #endif
 
-	explicit Zip(Util const& util) : Program(util, std::string{name_v}) {}
+	explicit Zip(Util const& util) : Program(util, name_v) {}
 
 	[[nodiscard]] auto create_archive(fs::path const& dir_to_add) const -> std::string;
 

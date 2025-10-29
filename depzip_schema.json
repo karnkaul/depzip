@@ -12,7 +12,7 @@
         "properties": {
           "uri": {
             "type": "string",
-            "description": "Repository sub-URI (eg octocat/Hello-World)"
+            "description": "Repository sub-URI, eg octocat/Hello-World"
           },
           "branch": {
             "type": "string",
@@ -24,10 +24,14 @@
           },
           "remove_subpaths": {
             "type": "array",
-            "description": "Subpaths to remove after checkout",
+            "description": "Subpaths to remove after checkout (optional)",
             "items": {
               "type": "string"
             }
+          },
+          "custom_command": {
+            "type": "string",
+            "description": "Custom shell command(s) to run, eg 'cmake -P script.cmake' (optional)"
           }
         },
         "required": [
@@ -38,7 +42,7 @@
     },
     "host": {
       "type": "string",
-      "description": "Default repository host URL (eg https://github.com, optional)",
+      "description": "Default repository host URL, eg https://github.com (optional)",
       "default": "https://github.com"
     }
   },
