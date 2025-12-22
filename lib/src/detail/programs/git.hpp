@@ -1,6 +1,6 @@
 #pragma once
-#include <detail/program.hpp>
-#include <detail/util.hpp>
+#include "detail/program.hpp"
+#include "detail/util.hpp"
 
 namespace dz::detail {
 class Git : public Program {
