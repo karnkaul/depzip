@@ -1,6 +1,6 @@
 #pragma once
-#include <depzip/manifest.hpp>
-#include <depzip/verbosity.hpp>
+#include "depzip/manifest.hpp"
+#include "depzip/verbosity.hpp"
 #include <djson/json.hpp>
 
 namespace dz {

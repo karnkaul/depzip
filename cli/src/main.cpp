@@ -1,7 +1,6 @@
-#include <depzip/instance.hpp>
-#include <depzip/json_io.hpp>
-#include <depzip/package_info.hpp>
-#include <depzip/panic.hpp>
+#include "depzip/instance.hpp"
+#include "depzip/json_io.hpp"
+#include "depzip/panic.hpp"
 #include <klib/args/parse.hpp>
 #include <array>
 #include <cassert>

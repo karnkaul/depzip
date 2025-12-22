@@ -1,5 +1,5 @@
 #pragma once
-#include <depzip/verbosity.hpp>
+#include "depzip/verbosity.hpp"
 #include <cstdlib>
 #include <string_view>
 

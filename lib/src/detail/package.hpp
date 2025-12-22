@@ -1,5 +1,5 @@
 #pragma once
-#include <depzip/package_info.hpp>
+#include "depzip/package_info.hpp"
 #include <filesystem>
 
 namespace dz::detail {

@@ -1,5 +1,5 @@
 #pragma once
-#include <detail/util.hpp>
+#include "detail/util.hpp"
 
 namespace dz::detail {
 class Workspace {

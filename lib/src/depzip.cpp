@@ -1,13 +1,13 @@
-#include <depzip/instance.hpp>
-#include <depzip/json_io.hpp>
-#include <depzip/panic.hpp>
-#include <detail/logger.hpp>
-#include <detail/package.hpp>
-#include <detail/programs/git.hpp>
-#include <detail/programs/zip.hpp>
-#include <detail/shell.hpp>
-#include <detail/string_builder.hpp>
-#include <detail/workspace.hpp>
+#include "depzip/instance.hpp"
+#include "depzip/json_io.hpp"
+#include "depzip/panic.hpp"
+#include "detail/logger.hpp"
+#include "detail/package.hpp"
+#include "detail/programs/git.hpp"
+#include "detail/programs/zip.hpp"
+#include "detail/shell.hpp"
+#include "detail/string_builder.hpp"
+#include "detail/workspace.hpp"
 #include <unordered_map>
 
 namespace dz::detail {
