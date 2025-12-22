@@ -4,6 +4,7 @@
 #include <depzip/panic.hpp>
 #include <klib/args/parse.hpp>
 #include <array>
+#include <cassert>
 #include <exception>
 #include <filesystem>
 #include <print>
@@ -11,6 +12,25 @@
 namespace dz::cli {
 namespace {
 namespace fs = std::filesystem;
+
+[[nodiscard]] auto locate_manifest(fs::path path) -> fs::path {
+	if (!path.empty()) {
+		if (fs::is_symlink(path)) { path = fs::read_symlink(path); }
+		if (!fs::is_regular_file(path)) { throw Panic{std::format("Invalid depzip manifest: {}", path.string())}; }
+		return path;
+	}
+
+	using namespace std::string_view_literals;
+	static constexpr auto default_paths_v = std::array{
+		"depzip.json"sv,
+		"depzip.jsonc"sv,
+	};
+	for (auto const path : default_paths_v) {
+		if (fs::is_regular_file(path)) { return path; }
+	}
+
+	throw Panic{"Failed to locate depzip manifest"};
+}
 
 class App {
   public:
@@ -44,12 +64,11 @@ class App {
 	}
 
 	void read_manifest() {
-		auto const manifest_path = [this] {
-			if (fs::is_symlink(m_manifest_path)) { return fs::read_symlink(m_manifest_path); }
-			return fs::path{m_manifest_path};
-		}();
+		auto const manifest_path = locate_manifest(m_manifest_path);
+		assert(!manifest_path.empty());
+
 		auto result = dj::Json::from_file(manifest_path.string(), dj::ParseMode::Jsonc);
-		if (!result) { throw Panic{std::format("Failed to read manifest {}", manifest_path.generic_string())}; }
+		if (!result) { throw Panic{std::format("Failed to read manifest: {}", manifest_path.string())}; }
 		m_manifest_json = std::move(*result);
 		from_json(m_manifest_json, m_manifest);
 	}
@@ -67,7 +86,7 @@ class App {
 		m_instance->vendor(m_manifest, m_config);
 	}
 
-	std::string_view m_manifest_path{"depzip.json"};
+	std::string_view m_manifest_path{};
 	VerbosityInput m_verbosity{};
 	Config m_config{};
 
