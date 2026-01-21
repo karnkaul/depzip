@@ -12,7 +12,6 @@ TEST(instance) {
 
 	auto const config = dz::Config{
 		.working_dir = "workspace",
-		.verbosity = dz::Verbosity::Verbose,
 	};
 
 	auto const manifest = dz::Manifest{

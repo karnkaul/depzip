@@ -2,7 +2,6 @@
 #include "depzip/build_version.hpp"
 #include "depzip/config.hpp"
 #include "depzip/manifest.hpp"
-#include "depzip/verbosity.hpp"
 #include <memory>
 
 namespace dz {

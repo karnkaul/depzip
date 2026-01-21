@@ -1,5 +1,4 @@
 #pragma once
-#include "depzip/verbosity.hpp"
 #include <string_view>
 
 namespace dz {
@@ -11,7 +10,5 @@ struct Config {
 	std::string_view source_dir{"src"};
 	/// \brief Working directory.
 	std::string_view working_dir{"."};
-	/// \brief Output verbosity.
-	Verbosity verbosity{Verbosity::Default};
 };
 } // namespace dz
