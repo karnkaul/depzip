@@ -3,7 +3,7 @@
 #include <filesystem>
 #include <string>
 
-namespace dz::detail {
+namespace depzip::detail {
 namespace fs = std::filesystem;
 
 class Git : public Program {
@@ -39,4 +39,4 @@ class Git : public Program {
 
 	Host host{};
 };
-} // namespace dz::detail
+} // namespace depzip::detail

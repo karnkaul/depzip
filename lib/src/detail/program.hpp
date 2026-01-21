@@ -1,7 +1,7 @@
 #pragma once
 #include <string_view>
 
-namespace dz::detail {
+namespace depzip::detail {
 class Program {
   public:
 	static constexpr std::string_view does_exist_args_v = "--version";
@@ -15,4 +15,4 @@ class Program {
   private:
 	std::string_view m_command{};
 };
-} // namespace dz::detail
+} // namespace depzip::detail

@@ -1,7 +1,7 @@
 #pragma once
 #include "detail/util.hpp"
 
-namespace dz::detail {
+namespace depzip::detail {
 class Workspace {
   public:
 	void setup(fs::path const& working_dir, fs::path src_dir) {
@@ -16,4 +16,4 @@ class Workspace {
   private:
 	fs::path m_src_dir{};
 };
-} // namespace dz::detail
+} // namespace depzip::detail

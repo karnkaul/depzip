@@ -10,7 +10,7 @@
 #include "detail/workspace.hpp"
 #include <unordered_map>
 
-namespace dz::detail {
+namespace depzip::detail {
 namespace {
 [[nodiscard]] auto contains_host(fs::path uri) -> bool {
 	uri = uri.parent_path();
@@ -26,7 +26,7 @@ constexpr auto dev_null_v = std::string_view{
 #endif
 };
 
-class Instance : public dz::Instance {
+class Instance : public depzip::Instance {
 	void vendor(Manifest const& manifest, Config const& config) final {
 		setup(config);
 
@@ -150,13 +150,9 @@ Program::Program(std::string_view const command, std::string_view const does_exi
 auto Program::execute(std::string_view const args) const -> bool { return shell::execute(m_command, args).is_success(); }
 
 void Git::Host::set_value(std::string_view const value) {
+	if (value.empty()) { return; }
 	m_value = value;
-	if (m_value.empty()) {
-		static constexpr std::string_view default_host_v{"https://github.com"};
-		m_value = default_host_v;
-	} else if (m_value.ends_with('/')) {
-		m_value.pop_back();
-	}
+	if (m_value.ends_with('/')) { m_value.pop_back(); }
 }
 
 auto Git::Host::to_url(std::string_view const uri) const -> std::string {
@@ -212,12 +208,14 @@ Package::Package(Git const& git, fs::path const& src_dir, Info const& info) {
 	if (info.custom_command.empty()) { return; }
 	auto const result = shell::execute(info.custom_command);
 	if (!result) { throw Panic{std::format("Failed to execute custom command for {} (exit code: {})", get_subdir().generic_string(), result.get_code())}; }
+
+	log.info("== Package setup complete: {}", get_subdir().generic_string());
 }
-} // namespace dz::detail
+} // namespace depzip::detail
 
-auto dz::create_instance() -> std::unique_ptr<Instance> { return std::make_unique<detail::Instance>(); }
+auto depzip::create_instance() -> std::unique_ptr<Instance> { return std::make_unique<detail::Instance>(); }
 
-void dz::from_json(dj::Json const& json, PackageInfo& package) {
+void depzip::from_json(dj::Json const& json, PackageInfo& package) {
 	from_json(json["uri"], package.uri);
 	from_json(json["branch"], package.branch, package.branch);
 	from_json(json["subdir"], package.subdir, package.subdir);
@@ -225,7 +223,7 @@ void dz::from_json(dj::Json const& json, PackageInfo& package) {
 	from_json(json["custom_command"], package.custom_command);
 }
 
-void dz::to_json(dj::Json& json, PackageInfo const& package) {
+void depzip::to_json(dj::Json& json, PackageInfo const& package) {
 	if (!package.uri.empty()) { to_json(json["uri"], package.uri); }
 	if (!package.branch.empty()) { to_json(json["branch"], package.branch); }
 	if (!package.subdir.empty()) { to_json(json["subdir"], package.subdir); }
@@ -233,12 +231,12 @@ void dz::to_json(dj::Json& json, PackageInfo const& package) {
 	if (!package.custom_command.empty()) { to_json(json["custom_command"], package.custom_command); }
 }
 
-void dz::from_json(dj::Json const& json, Manifest& manifest) {
+void depzip::from_json(dj::Json const& json, Manifest& manifest) {
 	for (auto const& package : json["packages"].as_array()) { from_json(package, manifest.packages.emplace_back()); }
 	from_json(json["default_host"], manifest.default_host);
 }
 
-void dz::to_json(dj::Json& json, Manifest const& manifest) {
+void depzip::to_json(dj::Json& json, Manifest const& manifest) {
 	for (auto const& package : manifest.packages) { to_json(json["packages"].push_back(), package); }
 	if (!manifest.default_host.empty()) { to_json(json["default_host"], manifest.default_host); }
 }

@@ -2,7 +2,7 @@
 #include "depzip/package_info.hpp"
 #include <filesystem>
 
-namespace dz::detail {
+namespace depzip::detail {
 class Git;
 
 namespace fs = std::filesystem;
@@ -18,4 +18,4 @@ class Package {
   private:
 	fs::path m_subdir{};
 };
-} // namespace dz::detail
+} // namespace depzip::detail

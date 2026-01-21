@@ -7,7 +7,7 @@
 #include <klib/version_str.hpp>
 #include <filesystem>
 
-namespace dz::cli {
+namespace depzip::cli {
 namespace {
 namespace fs = std::filesystem;
 
@@ -63,7 +63,7 @@ void App::read_manifest() {
 }
 
 void App::run() {
-	m_log.info("depzip v{}", build_version_v);
+	m_log.info("depzip {}", build_version_v);
 
 	read_manifest();
 	if (m_manifest.packages.empty()) {
@@ -74,4 +74,4 @@ void App::run() {
 	m_instance = create_instance();
 	m_instance->vendor(m_manifest, m_config);
 }
-} // namespace dz::cli
+} // namespace depzip::cli

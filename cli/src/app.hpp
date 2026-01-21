@@ -4,7 +4,7 @@
 #include <klib/args/parse_result.hpp>
 #include <klib/log.hpp>
 
-namespace dz::cli {
+namespace depzip::cli {
 class App {
   public:
 	[[nodiscard]] auto run(int argc, char const* const* argv) -> int;
@@ -24,4 +24,4 @@ class App {
 
 	std::unique_ptr<Instance> m_instance{};
 };
-} // namespace dz::cli
+} // namespace depzip::cli

@@ -2,7 +2,7 @@
 #include <concepts>
 #include <string>
 
-namespace dz::detail {
+namespace depzip::detail {
 struct StringBuilder {
 	template <std::convertible_to<std::string_view>... Ts>
 	[[nodiscard]] static auto build(Ts const&... ts) -> std::string {
@@ -20,4 +20,4 @@ struct StringBuilder {
 	std::string value{};
 	std::string_view delimiter{" "};
 };
-} // namespace dz::detail
+} // namespace depzip::detail

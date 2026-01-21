@@ -1,10 +1,10 @@
 #pragma once
 #include <klib/version.hpp>
 
-namespace dz {
+namespace depzip {
 constexpr auto build_version_v = klib::Version{
 	.major = @PROJECT_VERSION_MAJOR@,
 	.minor = @PROJECT_VERSION_MINOR@,
 	.patch = @PROJECT_VERSION_PATCH@,
 };
-} // namespace dz
+} // namespace depzip

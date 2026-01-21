@@ -2,7 +2,7 @@
 #include "detail/program.hpp"
 #include <filesystem>
 
-namespace dz::detail {
+namespace depzip::detail {
 namespace fs = std::filesystem;
 
 class Zip : public Program {
@@ -21,4 +21,4 @@ class Zip : public Program {
   private:
 	[[nodiscard]] static auto build_args(std::string_view zip_name, std::string_view dir_to_add) -> std::string;
 };
-} // namespace dz::detail
+} // namespace depzip::detail

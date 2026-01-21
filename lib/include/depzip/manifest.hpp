@@ -2,7 +2,7 @@
 #include "depzip/package_info.hpp"
 #include <vector>
 
-namespace dz {
+namespace depzip {
 /// \brief Manifest description.
 struct Manifest {
 	static constexpr std::string_view default_host_v{"https://github.com"};
@@ -16,4 +16,4 @@ struct Manifest {
 	/// Defaults to default_host_v if empty.
 	std::string_view default_host{default_host_v};
 };
-} // namespace dz
+} // namespace depzip

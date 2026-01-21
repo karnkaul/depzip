@@ -4,7 +4,7 @@
 
 auto main(int argc, char** argv) -> int {
 	try {
-		auto app = dz::cli::App{};
+		auto app = depzip::cli::App{};
 		return app.run(argc, argv);
 	} catch (std::exception const& e) {
 		std::println(stderr, "PANIC: {}", e.what());

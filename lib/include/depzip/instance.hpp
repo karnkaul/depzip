@@ -4,7 +4,7 @@
 #include "depzip/manifest.hpp"
 #include <memory>
 
-namespace dz {
+namespace depzip {
 /// \brief Opaque interface for primary API.
 class Instance {
   public:
@@ -25,4 +25,4 @@ class Instance {
 
 /// \returns A concrete Instance.
 [[nodiscard]] auto create_instance() -> std::unique_ptr<Instance>;
-} // namespace dz
+} // namespace depzip

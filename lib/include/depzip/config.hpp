@@ -1,7 +1,7 @@
 #pragma once
 #include <string_view>
 
-namespace dz {
+namespace depzip {
 /// \brief Configuration for a vendor request.
 struct Config {
 	/// \brief Source directory.
@@ -11,4 +11,4 @@ struct Config {
 	/// \brief Working directory.
 	std::string_view working_dir{"."};
 };
-} // namespace dz
+} // namespace depzip
