@@ -1,7 +1,7 @@
 #include "depzip/instance.hpp"
 #include "depzip/json_io.hpp"
 #include "depzip/panic.hpp"
-#include "detail/logger.hpp"
+#include "detail/log.hpp"
 #include "detail/package.hpp"
 #include "detail/programs/git.hpp"
 #include "detail/programs/zip.hpp"
@@ -18,14 +18,13 @@ namespace {
 	return uri.string().find_first_of(":./") != std::string::npos;
 }
 
-[[nodiscard]] constexpr auto create_suffix(Verbosity const verbosity) -> std::string_view {
-	if (verbosity != Verbosity::Silent) { return {}; }
+constexpr auto dev_null_v = std::string_view{
 #if defined(_WIN32) && !defined(__MINGW__)
-	return " >nul 2>nul";
+	" >nul 2>nul"
 #else
-	return "> /dev/null 2>&1";
+	"> /dev/null 2>&1"
 #endif
-}
+};
 
 class Instance : public dz::Instance {
 	void vendor(Manifest const& manifest, Config const& config) final {
@@ -41,27 +40,22 @@ class Instance : public dz::Instance {
 		create_zip();
 	}
 
-	void setup(Config const& config) {
-		m_logger.verbosity = config.verbosity;
-		m_workspace.setup(config.working_dir, config.source_dir);
-	}
+	void setup(Config const& config) { m_workspace.setup(config.working_dir, config.source_dir); }
 
 	void add_package(PackageInfo const& package_info) {
 		auto const& package = m_packages.emplace_back(m_git, m_workspace.get_src_dir(), package_info);
-		m_logger("== Package setup complete: {}\n", package.get_subdir().generic_string());
+		log.info("== Package setup complete: {}", package.get_subdir().generic_string());
 	}
 
 	void create_zip() {
 		auto const zip_name = m_zip.create_archive(m_workspace.get_src_dir());
-		m_logger("== ZIP file {} created\n", zip_name);
+		log.info("== ZIP file {} created", zip_name);
 	}
 
-	Logger m_logger{};
-	Util m_util{m_logger};
-	Workspace m_workspace{m_util};
+	Workspace m_workspace{};
 
-	Git m_git{m_util};
-	Zip m_zip{m_util};
+	Git m_git{};
+	Zip m_zip{};
 
 	std::vector<Package> m_packages{};
 };
@@ -77,27 +71,33 @@ auto StringBuilder::append(std::string_view const text) -> StringBuilder& {
 	return *this;
 }
 
-auto shell::execute(Verbosity const verbosity, std::string_view const command, std::string_view const args) -> Result {
-	auto const expr = StringBuilder::build(command, args, create_suffix(verbosity));
-	if (verbosity == Verbosity::Verbose) { std::println("-- {}", expr); }
+auto shell::execute(std::string_view const command, std::string_view const args) -> Result {
+	auto expr = StringBuilder::build(command, args);
+	log.debug("{}", expr);
+	expr.append(dev_null_v);
 	return std::system(expr.c_str()); // NOLINT(concurrency-mt-unsafe)
 }
 
-void Util::mkdir(fs::path const& path) const {
+auto shell::execute_silent(std::string_view const command, std::string_view const args) -> Result {
+	auto const expr = StringBuilder::build(command, args, dev_null_v);
+	return std::system(expr.c_str()); // NOLINT(concurrency-mt-unsafe)
+}
+
+void util::mkdir(fs::path const& path) {
 	if (path == ".") { return; }
-	logger("-- Creating directory {}", path.generic_string());
+	log.debug("creating directory {}", path.generic_string());
 	if (!fs::create_directories(path)) { throw Panic{std::format("Failed to create directory {}", path.generic_string())}; }
 }
 
-void Util::cd(fs::path const& path) const {
+void util::cd(fs::path const& path) {
 	if (path.empty() || path == ".") { return; }
-	logger("-- Changing pwd to {}", path.generic_string());
+	log.debug("changing pwd to {}", path.generic_string());
 	fs::current_path(path);
 }
 
-void Util::rm_rf(fs::path const& path) const {
+void util::rm_rf(fs::path const& path) {
 	if (!fs::exists(path)) { return; }
-	logger("-- Deleting {}", path.generic_string());
+	log.debug("deleting {}", path.generic_string());
 
 	auto const extract_failed_path = [](std::string_view const fs_err) -> std::string {
 		auto const lbrace = fs_err.find_last_of('[');
@@ -134,8 +134,8 @@ void Util::rm_rf(fs::path const& path) const {
 				std::rethrow_exception(std::current_exception());
 			}
 
-			logger("{}\n  changing perms and retrying... (attempt: {}/{}, iteration: {}/{})", e.what(), retry_attempt, max_attempts_v, iteration,
-				   max_iterations_v);
+			log.debug("{}\n  changing perms and retrying... (attempt: {}/{}, iteration: {}/{})", e.what(), retry_attempt, max_attempts_v, iteration,
+					  max_iterations_v);
 			fs::permissions(failed_path, fs::perms::owner_write | fs::perms::others_write);
 		}
 	}
@@ -143,11 +143,11 @@ void Util::rm_rf(fs::path const& path) const {
 	throw Panic{std::format("Failed to delete {} ({} iterations)", path.generic_string(), iteration)};
 }
 
-Program::Program(Util const& util, std::string_view const command, std::string_view const does_exist_args) : util(util), m_command(command) {
-	if (!shell::execute(Verbosity::Silent, command, does_exist_args)) { throw Panic{std::format("{} not found", get_command())}; }
+Program::Program(std::string_view const command, std::string_view const does_exist_args) : m_command(command) {
+	if (!shell::execute_silent(command, does_exist_args)) { throw Panic{std::format("{} not found", get_command())}; }
 }
 
-auto Program::execute(std::string_view const args) const -> bool { return shell::execute(util.logger.verbosity, m_command, args).is_success(); }
+auto Program::execute(std::string_view const args) const -> bool { return shell::execute(m_command, args).is_success(); }
 
 void Git::Host::set_value(std::string_view const value) {
 	m_value = value;
@@ -165,7 +165,7 @@ auto Git::Host::to_url(std::string_view const uri) const -> std::string {
 }
 
 void Git::clone(Clone const& params) const {
-	if (fs::exists(params.dest_dir)) { util.rm_rf(params.dest_dir); }
+	if (fs::exists(params.dest_dir)) { util::rm_rf(params.dest_dir); }
 	auto builder = StringBuilder{.value = std::format("{} --depth={}", Clone::name_v, params.depth)};
 	if (!params.branch.empty()) { builder.append(std::format("--branch={}", params.branch)); }
 	auto const url = host.to_url(params.uri);
@@ -178,7 +178,7 @@ void Git::clone(Clone const& params) const {
 
 auto Zip::create_archive(fs::path const& dir_to_add) const -> std::string {
 	auto const zip_name = std::format("{}.zip", dir_to_add.filename().string());
-	if (fs::exists(zip_name)) { util.rm_rf(zip_name); }
+	if (fs::exists(zip_name)) { util::rm_rf(zip_name); }
 	auto const args = build_args(zip_name, dir_to_add.string());
 	if (!execute(args)) { throw Panic{std::format("Failed to create ZIP {}", zip_name)}; }
 	return zip_name;
@@ -203,14 +203,14 @@ Package::Package(Git const& git, fs::path const& src_dir, Info const& info) {
 	};
 	git.clone(clone_params);
 
-	git.util.rm_rf(clone_params.dest_dir / ".git");
+	util::rm_rf(clone_params.dest_dir / ".git");
 	for (auto const& subpath : info.remove_subpaths) {
 		auto const path = clone_params.dest_dir / subpath;
-		git.util.rm_rf(path);
+		util::rm_rf(path);
 	}
 
 	if (info.custom_command.empty()) { return; }
-	auto const result = shell::execute(git.util.logger.verbosity, info.custom_command);
+	auto const result = shell::execute(info.custom_command);
 	if (!result) { throw Panic{std::format("Failed to execute custom command for {} (exit code: {})", get_subdir().generic_string(), result.get_code())}; }
 }
 } // namespace dz::detail

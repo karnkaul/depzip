@@ -1,8 +1,10 @@
 #pragma once
 #include "detail/program.hpp"
-#include "detail/util.hpp"
+#include <filesystem>
 
 namespace dz::detail {
+namespace fs = std::filesystem;
+
 class Zip : public Program {
   public:
 	static constexpr std::string_view name_v =
@@ -12,7 +14,7 @@ class Zip : public Program {
 		"zip";
 #endif
 
-	explicit Zip(Util const& util) : Program(util, name_v) {}
+	explicit Zip() : Program(name_v) {}
 
 	[[nodiscard]] auto create_archive(fs::path const& dir_to_add) const -> std::string;
 

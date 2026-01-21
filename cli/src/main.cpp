@@ -2,6 +2,8 @@
 #include "depzip/json_io.hpp"
 #include "depzip/panic.hpp"
 #include <klib/args/parse.hpp>
+#include <klib/log.hpp>
+#include <klib/version_str.hpp>
 #include <array>
 #include <cassert>
 #include <exception>
@@ -48,8 +50,9 @@ class App {
 	};
 
 	[[nodiscard]] auto parse_args(int const argc, char const* const* argv) -> klib::args::ParseResult {
+		static auto const version_str = std::format("{}", build_version_v);
 		auto const parse_info = klib::args::ParseInfo{
-			.version = build_version_v,
+			.version = version_str,
 		};
 		auto const args = std::array{
 			klib::args::named_option(m_config.source_dir, "s,src", "source directory"),
@@ -73,7 +76,7 @@ class App {
 	}
 
 	void run() {
-		if (m_config.verbosity != Verbosity::Silent) { std::println("depzip v{}", build_version_v); }
+		m_log.info("depzip v{}", build_version_v);
 
 		read_manifest();
 		if (m_manifest.packages.empty()) {
@@ -84,6 +87,8 @@ class App {
 		m_instance = create_instance();
 		m_instance->vendor(m_manifest, m_config);
 	}
+
+	klib::TypedLogger<App> m_log{};
 
 	std::string_view m_manifest_path{};
 	VerbosityInput m_verbosity{};

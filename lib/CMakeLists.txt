@@ -7,6 +7,7 @@ target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_23)
 
 target_link_libraries(${PROJECT_NAME} PUBLIC
   djson::djson
+  klib::klib
 )
 
 target_include_directories(${PROJECT_NAME} PRIVATE
