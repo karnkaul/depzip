@@ -2,7 +2,7 @@
 #include <string_view>
 #include <vector>
 
-namespace dz {
+namespace depzip {
 /// \brief Package description.
 struct PackageInfo {
 	/// \brief Location / identifier of a specific repository
@@ -21,4 +21,4 @@ struct PackageInfo {
 	/// \brief Custom shell command(s) to run, eg 'cmake -P script.cmake'.
 	std::string_view custom_command{};
 };
-} // namespace dz
+} // namespace depzip

@@ -1,9 +1,8 @@
 #pragma once
-#include "depzip/verbosity.hpp"
 #include <cstdlib>
 #include <string_view>
 
-namespace dz::detail::shell {
+namespace depzip::detail::shell {
 class Result {
   public:
 	explicit(false) constexpr Result(int const code) : m_code(code) {}
@@ -18,5 +17,6 @@ class Result {
 	int m_code{};
 };
 
-[[nodiscard]] auto execute(Verbosity verbosity, std::string_view command, std::string_view args = {}) -> Result;
-} // namespace dz::detail::shell
+[[nodiscard]] auto execute(std::string_view command, std::string_view args = {}) -> Result;
+[[nodiscard]] auto execute_silent(std::string_view command, std::string_view args = {}) -> Result;
+} // namespace depzip::detail::shell

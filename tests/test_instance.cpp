@@ -8,18 +8,17 @@ namespace fs = std::filesystem;
 TEST(instance) {
 	auto const pwd = fs::current_path();
 
-	auto instance = dz::create_instance();
+	auto instance = depzip::create_instance();
 
-	auto const config = dz::Config{
+	auto const config = depzip::Config{
 		.working_dir = "workspace",
-		.verbosity = dz::Verbosity::Verbose,
 	};
 
-	auto const manifest = dz::Manifest{
+	auto const manifest = depzip::Manifest{
 		.packages =
 			{
-				dz::PackageInfo{.uri = "karnkaul/depzip.git"},
-				dz::PackageInfo{
+				depzip::PackageInfo{.uri = "karnkaul/depzip.git"},
+				depzip::PackageInfo{
 					.uri = "glfw/glfw",
 					.branch = "3.4",
 					.remove_subpaths = {"docs", "examples"},

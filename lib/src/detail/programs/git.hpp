@@ -1,8 +1,11 @@
 #pragma once
 #include "detail/program.hpp"
-#include "detail/util.hpp"
+#include <filesystem>
+#include <string>
 
-namespace dz::detail {
+namespace depzip::detail {
+namespace fs = std::filesystem;
+
 class Git : public Program {
   public:
 	static constexpr std::string_view name_v{"git"};
@@ -30,10 +33,10 @@ class Git : public Program {
 		int depth{1};
 	};
 
-	explicit Git(Util const& util) : Program(util, name_v) {}
+	explicit Git() : Program(name_v) {}
 
 	void clone(Clone const& params) const;
 
 	Host host{};
 };
-} // namespace dz::detail
+} // namespace depzip::detail
