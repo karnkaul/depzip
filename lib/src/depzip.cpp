@@ -5,6 +5,7 @@
 #include "detail/package.hpp"
 #include "detail/programs/git.hpp"
 #include "detail/programs/zip.hpp"
+#include "detail/setup_package.hpp"
 #include "detail/shell.hpp"
 #include "detail/string_builder.hpp"
 #include "detail/util.hpp"
@@ -38,6 +39,9 @@ class Instance : public depzip::Instance {
 
 		m_git.host.set_value(manifest.default_host);
 		for (auto const& package_info : manifest.packages) { add_package(package_info); }
+
+		enqueue_package_setup();
+		wait_for_package_setup();
 		log.info("== {} package(s) setup", m_packages.size());
 
 		create_zip();
@@ -46,8 +50,29 @@ class Instance : public depzip::Instance {
 	void setup(Config const& config) { m_workspace.setup(config.working_dir, config.source_dir, config.wipe_source_dir); }
 
 	void add_package(PackageInfo const& package_info) {
-		auto const& package = m_packages.emplace_back(m_git, m_workspace.get_src_dir(), package_info);
-		log.info("== Package setup complete: {}", package.get_subdir().generic_string());
+		m_packages.push_back(std::make_unique<SetupPackage>(m_git, m_workspace.get_src_dir(), package_info));
+		auto& package = m_packages.back();
+		if (package->get_state() == SetupPackage::State::Failed) { throw Panic{"Package setup failure"}; }
+	}
+
+	void enqueue_package_setup() {
+		auto tasks = std::vector<klib::task::Task*>{};
+		tasks.reserve(m_packages.size());
+		for (auto const& package : m_packages) { tasks.push_back(package.get()); }
+		// queue.enqueue(tasks);
+
+		for (auto const& package : m_packages) { package->execute(); }
+	}
+
+	void wait_for_package_setup() {
+		for (auto& package : m_packages) {
+			package->wait();
+			if (package->get_state() == SetupPackage::State::Failed) {
+				// queue.drop();
+				// queue.wait();
+				throw Panic{"Package setup failure"};
+			}
+		}
 	}
 
 	void create_zip() {
@@ -60,7 +85,7 @@ class Instance : public depzip::Instance {
 	Git m_git{};
 	Zip m_zip{};
 
-	std::vector<Package> m_packages{};
+	std::vector<std::unique_ptr<SetupPackage>> m_packages{};
 };
 } // namespace
 
@@ -221,6 +246,42 @@ Package::Package(Git const& git, fs::path const& src_dir, Info const& info) {
 	if (!result) { throw Panic{std::format("Failed to execute custom command for {} (exit code: {})", get_subdir().generic_string(), result.get_code())}; }
 
 	log.info("== Package setup complete: {}", get_subdir().generic_string());
+}
+
+SetupPackage::SetupPackage(Git const& git, fs::path const& src_dir, Info const& info) : m_git(&git), m_src_dir(&src_dir), m_info(&info) {}
+
+void SetupPackage::execute() {
+	m_state = State::Busy;
+
+	auto subdir = fs::path{m_info->subdir}.generic_string();
+	if (subdir.empty()) { subdir = fs::path{m_info->uri}.stem().generic_string(); }
+	log.info("-- starting package setup: {}", subdir);
+
+	try {
+		auto const clone_params = Git::Clone{
+			.uri = m_info->uri,
+			.branch = m_info->branch,
+			.dest_dir = *m_src_dir / subdir,
+		};
+		m_git->clone(clone_params);
+
+		util::rm_rf(clone_params.dest_dir / ".git");
+		for (auto const& subpath : m_info->remove_subpaths) {
+			auto const path = clone_params.dest_dir / subpath;
+			util::rm_rf(path);
+		}
+
+		if (!m_info->custom_command.empty()) {
+			auto const result = shell::execute(m_info->custom_command);
+			if (!result) { throw Panic{std::format("Failed to execute custom command for {} (exit code: {})", subdir, result.get_code())}; }
+		}
+
+		log.info("== package setup complete: {}", subdir);
+		m_state = State::Complete;
+	} catch (std::exception const& e) {
+		log.error("error creating package: {}\n {}", subdir, e.what());
+		m_state = State::Failed;
+	}
 }
 } // namespace depzip::detail
 
