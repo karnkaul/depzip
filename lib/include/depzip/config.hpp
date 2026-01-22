@@ -10,5 +10,7 @@ struct Config {
 	std::string_view source_dir{"src"};
 	/// \brief Working directory.
 	std::string_view working_dir{"."};
+	/// \brief Wipe source_dir before starting.
+	bool wipe_source_dir{true};
 };
 } // namespace depzip

@@ -7,6 +7,7 @@
 #include "detail/programs/zip.hpp"
 #include "detail/shell.hpp"
 #include "detail/string_builder.hpp"
+#include "detail/util.hpp"
 #include "detail/workspace.hpp"
 #include <unordered_map>
 
@@ -31,16 +32,18 @@ class Instance : public depzip::Instance {
 		setup(config);
 
 		if (manifest.packages.empty()) {
-			throw Panic{"Nothing to vendor"};
+			log.warn("nothing to package");
 			return;
 		}
 
 		m_git.host.set_value(manifest.default_host);
 		for (auto const& package_info : manifest.packages) { add_package(package_info); }
+		log.info("== {} package(s) setup", m_packages.size());
+
 		create_zip();
 	}
 
-	void setup(Config const& config) { m_workspace.setup(config.working_dir, config.source_dir); }
+	void setup(Config const& config) { m_workspace.setup(config.working_dir, config.source_dir, config.wipe_source_dir); }
 
 	void add_package(PackageInfo const& package_info) {
 		auto const& package = m_packages.emplace_back(m_git, m_workspace.get_src_dir(), package_info);
@@ -141,6 +144,14 @@ void util::rm_rf(fs::path const& path) {
 	}
 
 	throw Panic{std::format("Failed to delete {} ({} iterations)", path.generic_string(), iteration)};
+}
+
+void Workspace::setup(fs::path const& working_dir, fs::path src_dir, bool const wipe_src) {
+	m_src_dir = std::move(src_dir);
+	if (!working_dir.empty() && !fs::exists(working_dir)) { util::mkdir(working_dir); }
+	util::cd(working_dir);
+	if (wipe_src && fs::is_directory(m_src_dir)) { util::rm_rf(m_src_dir); }
+	if (!fs::is_directory(m_src_dir)) { util::mkdir(m_src_dir); }
 }
 
 Program::Program(std::string_view const command, std::string_view const does_exist_args) : m_command(command) {
