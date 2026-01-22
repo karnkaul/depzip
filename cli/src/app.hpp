@@ -17,6 +17,7 @@ class App {
 	klib::TypedLogger<App> m_log{};
 
 	std::string_view m_manifest_path{};
+	InstanceCreateInfo m_instance_ci{};
 	Config m_config{};
 
 	dj::Json m_manifest_json{};

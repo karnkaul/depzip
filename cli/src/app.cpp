@@ -44,12 +44,16 @@ auto App::parse_args(int const argc, char const* const* argv) -> klib::args::Par
 	auto const parse_info = klib::args::ParseInfo{
 		.version = version_str,
 	};
+	auto thread_count = std::to_underlying(m_instance_ci.thread_count);
 	auto const args = std::array{
 		klib::args::named_option(m_config.source_dir, "s,src", "source directory"),
 		klib::args::named_option(m_config.working_dir, "w,pwd", "working directory"),
+		klib::args::named_option(thread_count, "j,jobs", "job/thread count"),
 		klib::args::positional_optional(m_manifest_path, "manifest", "path to manifest"),
 	};
-	return klib::args::parse_main(parse_info, args, argc, argv);
+	auto const ret = klib::args::parse_main(parse_info, args, argc, argv);
+	m_instance_ci.thread_count = klib::task::ThreadCount{thread_count};
+	return ret;
 }
 
 void App::read_manifest() {
@@ -71,7 +75,7 @@ void App::run() {
 		return;
 	}
 
-	m_instance = create_instance();
+	m_instance = create_instance(m_instance_ci);
 	m_instance->vendor(m_manifest, m_config);
 }
 } // namespace depzip::cli

@@ -2,7 +2,6 @@
 #include "depzip/json_io.hpp"
 #include "depzip/panic.hpp"
 #include "detail/log.hpp"
-#include "detail/package.hpp"
 #include "detail/programs/git.hpp"
 #include "detail/programs/zip.hpp"
 #include "detail/setup_package.hpp"
@@ -10,6 +9,7 @@
 #include "detail/string_builder.hpp"
 #include "detail/util.hpp"
 #include "detail/workspace.hpp"
+#include <klib/task/queue.hpp>
 #include <unordered_map>
 
 namespace depzip::detail {
@@ -29,7 +29,20 @@ constexpr auto dev_null_v = std::string_view{
 };
 
 class Instance : public depzip::Instance {
+  public:
+	explicit Instance(InstanceCreateInfo const& create_info) : m_task_queue(queue_ci(create_info.thread_count)) {}
+
+  private:
+	static constexpr auto queue_ci(klib::task::ThreadCount const thread_count) -> klib::task::Queue::CreateInfo {
+		return klib::task::Queue::CreateInfo{
+			.thread_count = std::clamp(thread_count, klib::task::ThreadCount{1}, klib::task::get_max_threads()),
+		};
+	}
+
 	void vendor(Manifest const& manifest, Config const& config) final {
+		m_task_queue.drain_and_wait();
+		m_packages.clear();
+
 		setup(config);
 
 		if (manifest.packages.empty()) {
@@ -59,17 +72,15 @@ class Instance : public depzip::Instance {
 		auto tasks = std::vector<klib::task::Task*>{};
 		tasks.reserve(m_packages.size());
 		for (auto const& package : m_packages) { tasks.push_back(package.get()); }
-		// queue.enqueue(tasks);
-
-		for (auto const& package : m_packages) { package->execute(); }
+		m_task_queue.enqueue(tasks);
 	}
 
 	void wait_for_package_setup() {
 		for (auto& package : m_packages) {
 			package->wait();
 			if (package->get_state() == SetupPackage::State::Failed) {
-				// queue.drop();
-				// queue.wait();
+				m_task_queue.drop_enqueued();
+				m_task_queue.drain_and_wait();
 				throw Panic{"Package setup failure"};
 			}
 		}
@@ -77,7 +88,7 @@ class Instance : public depzip::Instance {
 
 	void create_zip() {
 		auto const zip_name = m_zip.create_archive(m_workspace.get_src_dir());
-		log.info("== ZIP file {} created", zip_name);
+		log.info("== {} created", zip_name);
 	}
 
 	Workspace m_workspace{};
@@ -86,6 +97,8 @@ class Instance : public depzip::Instance {
 	Zip m_zip{};
 
 	std::vector<std::unique_ptr<SetupPackage>> m_packages{};
+
+	klib::task::Queue m_task_queue;
 };
 } // namespace
 
@@ -224,30 +237,6 @@ auto Zip::build_args(std::string_view const zip_name, std::string_view const dir
 #endif
 }
 
-Package::Package(Git const& git, fs::path const& src_dir, Info const& info) {
-	m_subdir = fs::path{info.subdir};
-	if (m_subdir.empty()) { m_subdir = fs::path{info.uri}.stem(); }
-
-	auto const clone_params = Git::Clone{
-		.uri = info.uri,
-		.branch = info.branch,
-		.dest_dir = src_dir / m_subdir,
-	};
-	git.clone(clone_params);
-
-	util::rm_rf(clone_params.dest_dir / ".git");
-	for (auto const& subpath : info.remove_subpaths) {
-		auto const path = clone_params.dest_dir / subpath;
-		util::rm_rf(path);
-	}
-
-	if (info.custom_command.empty()) { return; }
-	auto const result = shell::execute(info.custom_command);
-	if (!result) { throw Panic{std::format("Failed to execute custom command for {} (exit code: {})", get_subdir().generic_string(), result.get_code())}; }
-
-	log.info("== Package setup complete: {}", get_subdir().generic_string());
-}
-
 SetupPackage::SetupPackage(Git const& git, fs::path const& src_dir, Info const& info) : m_git(&git), m_src_dir(&src_dir), m_info(&info) {}
 
 void SetupPackage::execute() {
@@ -285,7 +274,7 @@ void SetupPackage::execute() {
 }
 } // namespace depzip::detail
 
-auto depzip::create_instance() -> std::unique_ptr<Instance> { return std::make_unique<detail::Instance>(); }
+auto depzip::create_instance(InstanceCreateInfo const& create_info) -> std::unique_ptr<Instance> { return std::make_unique<detail::Instance>(create_info); }
 
 void depzip::from_json(dj::Json const& json, PackageInfo& package) {
 	from_json(json["uri"], package.uri);

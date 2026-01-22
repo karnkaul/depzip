@@ -2,9 +2,15 @@
 #include "depzip/build_version.hpp"
 #include "depzip/config.hpp"
 #include "depzip/manifest.hpp"
+#include <klib/task/queue_create_info.hpp>
 #include <memory>
 
 namespace depzip {
+struct InstanceCreateInfo {
+	/// \brief Number of threads to use.
+	klib::task::ThreadCount thread_count{klib::task::get_max_threads()};
+};
+
 /// \brief Opaque interface for primary API.
 class Instance {
   public:
@@ -24,5 +30,5 @@ class Instance {
 };
 
 /// \returns A concrete Instance.
-[[nodiscard]] auto create_instance() -> std::unique_ptr<Instance>;
+[[nodiscard]] auto create_instance(InstanceCreateInfo const& create_info = {}) -> std::unique_ptr<Instance>;
 } // namespace depzip
