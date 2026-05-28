@@ -2,7 +2,7 @@
 #include "depzip/build_version.hpp"
 #include "depzip/config.hpp"
 #include "depzip/manifest.hpp"
-#include <klib/task/queue_create_info.hpp>
+#include "klib/task/queue_create_info.hpp"
 #include <memory>
 
 namespace depzip {

@@ -9,7 +9,7 @@
 #include "detail/string_builder.hpp"
 #include "detail/util.hpp"
 #include "detail/workspace.hpp"
-#include <klib/task/queue.hpp>
+#include "klib/task/queue.hpp"
 #include <unordered_map>
 
 namespace depzip::detail {
@@ -21,10 +21,10 @@ namespace {
 }
 
 constexpr auto dev_null_v = std::string_view{
-#if defined(_WIN32) && !defined(__MINGW__)
+#if defined(_WIN32)
 	" >nul 2>nul"
 #else
-	"> /dev/null 2>&1"
+	" > /dev/null 2>&1"
 #endif
 };
 

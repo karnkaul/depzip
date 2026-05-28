@@ -1,7 +1,7 @@
 #pragma once
 #include "depzip/package_info.hpp"
-#include <klib/ptr.hpp>
-#include <klib/task/task.hpp>
+#include "klib/ptr.hpp"
+#include "klib/task/task.hpp"
 #include <atomic>
 #include <filesystem>
 

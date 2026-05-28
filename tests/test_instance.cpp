@@ -1,11 +1,11 @@
 #include "depzip/instance.hpp"
-#include <klib/unit_test.hpp>
+#include "klib/unit_test/unit_test.hpp"
 #include <filesystem>
 
 namespace {
 namespace fs = std::filesystem;
 
-TEST(instance) {
+TEST_CASE(instance) {
 	auto const pwd = fs::current_path();
 
 	auto instance = depzip::create_instance();
