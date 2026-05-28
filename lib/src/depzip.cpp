@@ -9,33 +9,28 @@
 #include "detail/string_builder.hpp"
 #include "detail/util.hpp"
 #include "detail/workspace.hpp"
+#include "klib/cli/shell.hpp"
 #include "klib/task/queue.hpp"
 #include <unordered_map>
 
 namespace depzip::detail {
 namespace {
+using klib::task::ThreadCount;
+
 [[nodiscard]] auto contains_host(fs::path uri) -> bool {
 	uri = uri.parent_path();
 	if (uri.empty()) { return true; }
 	return uri.string().find_first_of(":./") != std::string::npos;
 }
 
-constexpr auto dev_null_v = std::string_view{
-#if defined(_WIN32)
-	" >nul 2>nul"
-#else
-	" > /dev/null 2>&1"
-#endif
-};
-
 class Instance : public depzip::Instance {
   public:
 	explicit Instance(InstanceCreateInfo const& create_info) : m_task_queue(queue_ci(create_info.thread_count)) {}
 
   private:
-	static constexpr auto queue_ci(klib::task::ThreadCount const thread_count) -> klib::task::Queue::CreateInfo {
+	static constexpr auto queue_ci(ThreadCount const thread_count) -> klib::task::Queue::CreateInfo {
 		return klib::task::Queue::CreateInfo{
-			.thread_count = std::clamp(thread_count, klib::task::ThreadCount{1}, klib::task::get_max_threads()),
+			.thread_count = std::clamp(thread_count, ThreadCount{1}, klib::task::get_max_threads()),
 		};
 	}
 
@@ -100,6 +95,12 @@ class Instance : public depzip::Instance {
 
 	klib::task::Queue m_task_queue;
 };
+
+[[nodiscard]] auto execute_impl(std::string_view const command, std::string_view const args, bool const silent) {
+	auto const expr = StringBuilder::build(command, args);
+	if (!silent) { log.debug("{}", expr); }
+	return int(klib::shell::execute_silent(expr));
+}
 } // namespace
 
 auto StringBuilder::append(std::string_view const text) -> StringBuilder& {
@@ -112,17 +113,9 @@ auto StringBuilder::append(std::string_view const text) -> StringBuilder& {
 	return *this;
 }
 
-auto shell::execute(std::string_view const command, std::string_view const args) -> Result {
-	auto expr = StringBuilder::build(command, args);
-	log.debug("{}", expr);
-	expr.append(dev_null_v);
-	return std::system(expr.c_str()); // NOLINT(concurrency-mt-unsafe)
-}
+auto shell::execute(std::string_view const command, std::string_view const args) -> Result { return execute_impl(command, args, false); }
 
-auto shell::execute_silent(std::string_view const command, std::string_view const args) -> Result {
-	auto const expr = StringBuilder::build(command, args, dev_null_v);
-	return std::system(expr.c_str()); // NOLINT(concurrency-mt-unsafe)
-}
+auto shell::execute_silent(std::string_view const command, std::string_view const args) -> Result { return execute_impl(command, args, true); }
 
 void util::mkdir(fs::path const& path) {
 	if (path == ".") { return; }
@@ -198,10 +191,10 @@ Program::Program(std::string_view const command, std::string_view const does_exi
 
 auto Program::execute(std::string_view const args) const -> bool { return shell::execute(m_command, args).is_success(); }
 
-void Git::Host::set_value(std::string_view const value) {
+void Git::Host::set_value(std::string_view value) {
+	while (!value.empty() && value.ends_with('/')) { value.remove_suffix(1); }
 	if (value.empty()) { return; }
 	m_value = value;
-	if (m_value.ends_with('/')) { m_value.pop_back(); }
 }
 
 auto Git::Host::to_url(std::string_view const uri) const -> std::string {

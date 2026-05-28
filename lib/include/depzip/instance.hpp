@@ -2,6 +2,7 @@
 #include "depzip/build_version.hpp"
 #include "depzip/config.hpp"
 #include "depzip/manifest.hpp"
+#include "klib/base_types.hpp"
 #include "klib/task/queue_create_info.hpp"
 #include <memory>
 
@@ -12,16 +13,8 @@ struct InstanceCreateInfo {
 };
 
 /// \brief Opaque interface for primary API.
-class Instance {
+class Instance : public klib::Polymorphic, public klib::Pinned {
   public:
-	Instance(Instance const&) = delete;
-	Instance(Instance&&) = delete;
-	auto operator=(Instance const&) = delete;
-	auto operator=(Instance&&) = delete;
-
-	Instance() = default;
-	virtual ~Instance() = default;
-
 	/// \brief Clone packages and create ZIP archive.
 	/// Throws Panic on fatal errors.
 	/// \param manifest Manifest description.
