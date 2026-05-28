@@ -1,7 +1,7 @@
 #pragma once
 #include "clap/result.hpp"
 #include "depzip/instance.hpp"
-#include "djson//json.hpp"
+#include "djson/json.hpp"
 #include "klib/log/typed.hpp"
 
 namespace depzip::cli {

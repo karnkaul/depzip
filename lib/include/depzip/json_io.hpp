@@ -1,6 +1,6 @@
 #pragma once
 #include "depzip/manifest.hpp"
-#include "djson//json.hpp"
+#include "djson/json.hpp"
 
 namespace depzip {
 /// \brief json must outlive all string views in package.
