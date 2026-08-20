@@ -18,7 +18,7 @@ All the core logic is in the library, the CLI tool being a thin wrapper that pro
 The depzip manifest (`depzip.json` by default) is a simple JSON object.
 
 - [Manifest schema](depzip_schema.json)
-- [Manifest example](ext/depzip.json)
+- [Manifest example](ext/depzip.jsonc)
 
 For example, to (re)vendor `depzip`'s own dependencies (assuming a `depzip` executable is in the project root):
 
@@ -30,7 +30,7 @@ cd ext
 Or, to run from the root directory:
 
 ```
-./depzip --pwd=ext ext/depzip.json
+./depzip --pwd=ext ext/depzip.jsonc
 ```
 
 Run `depzip --help` or `depzip --usage` for more info.

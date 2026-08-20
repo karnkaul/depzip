@@ -1,10 +1,9 @@
 #include "app.hpp"
+#include "clap/parser.hpp"
 #include "depzip/build_version.hpp"
 #include "depzip/json_io.hpp"
 #include "depzip/panic.hpp"
-#include <klib/args/parse.hpp>
-#include <klib/assert.hpp>
-#include <klib/version_str.hpp>
+#include "klib/debug/assert.hpp"
 #include <filesystem>
 
 namespace depzip::cli {
@@ -33,25 +32,26 @@ namespace fs = std::filesystem;
 
 auto App::run(int const argc, char const* const* argv) -> int {
 	auto const parse_result = parse_args(argc, argv);
-	if (parse_result.early_return()) { return parse_result.get_return_code(); }
+	if (parse_result.should_early_exit()) { return parse_result.return_code(); }
 
 	run();
 	return EXIT_SUCCESS;
 }
 
-auto App::parse_args(int const argc, char const* const* argv) -> klib::args::ParseResult {
+auto App::parse_args(int const argc, char const* const* argv) -> clap::Result {
 	static auto const version_str = std::format("{}", build_version_v);
-	auto const parse_info = klib::args::ParseInfo{
-		.version = version_str,
+	auto parse_info = clap::spec::Parameters{
+		.program = clap::Program{.version = version_str},
 	};
 	auto thread_count = std::to_underlying(m_instance_ci.thread_count);
-	auto const args = std::array{
-		klib::args::named_option(m_config.source_dir, "s,src", "source directory"),
-		klib::args::named_option(m_config.working_dir, "w,pwd", "working directory"),
-		klib::args::named_option(thread_count, "j,jobs", "job/thread count"),
-		klib::args::positional_optional(m_manifest_path, "manifest", "path to manifest"),
+	parse_info.parameters = {
+		clap::named_option(m_config.source_dir, "s,src", "source directory"),
+		clap::named_option(m_config.working_dir, "w,pwd", "working directory"),
+		clap::named_option(thread_count, "j,jobs", "job/thread count"),
+		clap::positional_optional(m_manifest_path, "manifest", "path to manifest"),
 	};
-	auto const ret = klib::args::parse_main(parse_info, args, argc, argv);
+	auto parser = clap::Parser{std::move(parse_info)};
+	auto const ret = parser.parse_main(argc, argv);
 	m_instance_ci.thread_count = klib::task::ThreadCount{thread_count};
 	return ret;
 }

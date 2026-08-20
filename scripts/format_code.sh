@@ -7,7 +7,7 @@ if [[ ! -d ./lib ]]; then
   exit 1
 fi
 
-files=$(find lib -name "*.?pp")
+files=$(find lib cli -name "*.?pp")
 
 if [[ "$files" == "" ]]; then
   echo "-- No source files found"
