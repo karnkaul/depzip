@@ -4,17 +4,28 @@
 #include "depzip/json_io.hpp"
 #include "depzip/panic.hpp"
 #include "klib/debug/assert.hpp"
+#include "klib/file_io.hpp"
 #include <filesystem>
 
 namespace depzip::cli {
 namespace {
 namespace fs = std::filesystem;
 
-[[nodiscard]] auto locate_manifest(fs::path path) -> fs::path {
-	if (!path.empty()) {
-		if (fs::is_symlink(path)) { path = fs::read_symlink(path); }
-		if (!fs::is_regular_file(path)) { throw Panic{std::format("Invalid depzip manifest: {}", path.string())}; }
-		return path;
+[[nodiscard]] auto resolved_path(fs::path const& in) -> fs::path {
+	KLIB_ASSERT(!in.empty());
+	if (!fs::is_symlink(in)) { return in; }
+
+	auto ret = klib::resolve_symlink(in.string());
+	if (ret.empty()) { throw Panic{std::format("Unresolved symlink: {}", in.generic_string())}; }
+	return ret;
+}
+
+[[nodiscard]] auto locate_manifest(fs::path in) -> fs::path {
+	if (!in.empty()) {
+		in = resolved_path(in);
+		if (!fs::exists(in)) { throw Panic{std::format("Nonexistent depzip manifest: {}", in.string())}; }
+		if (!fs::is_regular_file(in)) { throw Panic{std::format("depzip manifest is not a file: {}", in.string())}; }
+		return in;
 	}
 
 	using namespace std::string_view_literals;
@@ -61,7 +72,10 @@ void App::read_manifest() {
 	KLIB_ASSERT(!manifest_path.empty());
 
 	auto result = dj::Json::from_file(manifest_path.string(), dj::ParseMode::Jsonc);
-	if (!result) { throw Panic{std::format("Failed to read manifest: {}", manifest_path.string())}; }
+	if (!result) {
+		auto const error = dj::to_string(result.error());
+		throw Panic{std::format("Failed to read manifest: {}\n{}", manifest_path.string(), error)};
+	}
 	m_manifest_json = std::move(*result);
 	from_json(m_manifest_json, m_manifest);
 }
