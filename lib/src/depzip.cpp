@@ -19,7 +19,9 @@ using klib::task::ThreadCount;
 
 [[nodiscard]] auto contains_host(fs::path uri) -> bool {
 	uri = uri.parent_path();
-	if (uri.empty()) { return true; }
+	if (uri.empty()) {
+		return true;
+	}
 	return uri.string().find_first_of(":./") != std::string::npos;
 }
 
@@ -46,7 +48,9 @@ class Instance : public depzip::Instance {
 		}
 
 		m_git.host.set_value(manifest.default_host);
-		for (auto const& package_info : manifest.packages) { add_package(package_info); }
+		for (auto const& package_info : manifest.packages) {
+			add_package(package_info);
+		}
 
 		enqueue_package_setup();
 		wait_for_package_setup();
@@ -55,18 +59,24 @@ class Instance : public depzip::Instance {
 		create_zip();
 	}
 
-	void setup(Config const& config) { m_workspace.setup(config.working_dir, config.source_dir, config.wipe_source_dir); }
+	void setup(Config const& config) {
+		m_workspace.setup(config.working_dir, config.source_dir, config.wipe_source_dir);
+	}
 
 	void add_package(PackageInfo const& package_info) {
 		m_packages.push_back(std::make_unique<SetupPackage>(m_git, m_workspace.get_src_dir(), package_info));
 		auto& package = m_packages.back();
-		if (package->get_state() == SetupPackage::State::Failed) { throw Panic{"Package setup failure"}; }
+		if (package->get_state() == SetupPackage::State::Failed) {
+			throw Panic{"Package setup failure"};
+		}
 	}
 
 	void enqueue_package_setup() {
 		auto tasks = std::vector<klib::task::Task*>{};
 		tasks.reserve(m_packages.size());
-		for (auto const& package : m_packages) { tasks.push_back(package.get()); }
+		for (auto const& package : m_packages) {
+			tasks.push_back(package.get());
+		}
 		m_task_queue.enqueue(tasks);
 	}
 
@@ -98,13 +108,17 @@ class Instance : public depzip::Instance {
 
 [[nodiscard]] auto execute_impl(std::string_view const command, std::string_view const args, bool const silent) {
 	auto const expr = StringBuilder::build(command, args);
-	if (!silent) { log.debug("{}", expr); }
+	if (!silent) {
+		log.debug("{}", expr);
+	}
 	return int(klib::shell::execute_silent(expr));
 }
 } // namespace
 
 auto StringBuilder::append(std::string_view const text) -> StringBuilder& {
-	if (text.empty()) { return *this; }
+	if (text.empty()) {
+		return *this;
+	}
 	if (value.empty()) {
 		value = text;
 	} else {
@@ -113,32 +127,48 @@ auto StringBuilder::append(std::string_view const text) -> StringBuilder& {
 	return *this;
 }
 
-auto shell::execute(std::string_view const command, std::string_view const args) -> Result { return execute_impl(command, args, false); }
+auto shell::execute(std::string_view const command, std::string_view const args) -> Result {
+	return execute_impl(command, args, false);
+}
 
-auto shell::execute_silent(std::string_view const command, std::string_view const args) -> Result { return execute_impl(command, args, true); }
+auto shell::execute_silent(std::string_view const command, std::string_view const args) -> Result {
+	return execute_impl(command, args, true);
+}
 
 void util::mkdir(fs::path const& path) {
-	if (path == ".") { return; }
+	if (path == ".") {
+		return;
+	}
 	log.debug("creating directory {}", path.generic_string());
-	if (!fs::create_directories(path)) { throw Panic{std::format("Failed to create directory {}", path.generic_string())}; }
+	if (!fs::create_directories(path)) {
+		throw Panic{std::format("Failed to create directory {}", path.generic_string())};
+	}
 }
 
 void util::cd(fs::path const& path) {
-	if (path.empty() || path == ".") { return; }
+	if (path.empty() || path == ".") {
+		return;
+	}
 	log.debug("changing pwd to {}", path.generic_string());
 	fs::current_path(path);
 }
 
 void util::rm_rf(fs::path const& path) {
-	if (!fs::exists(path)) { return; }
+	if (!fs::exists(path)) {
+		return;
+	}
 	log.debug("deleting {}", path.generic_string());
 
 	auto const extract_failed_path = [](std::string_view const fs_err) -> std::string {
 		auto const lbrace = fs_err.find_last_of('[');
-		if (lbrace == std::string_view::npos) { return {}; }
+		if (lbrace == std::string_view::npos) {
+			return {};
+		}
 		auto ret = fs_err.substr(lbrace + 1);
 		auto const rbrace = ret.find(']');
-		if (rbrace < ret.size()) { ret.remove_suffix(ret.size() - rbrace); }
+		if (rbrace < ret.size()) {
+			ret.remove_suffix(ret.size() - rbrace);
+		}
 		return std::string{ret};
 	};
 
@@ -168,7 +198,11 @@ void util::rm_rf(fs::path const& path) {
 				std::rethrow_exception(std::current_exception());
 			}
 
-			log.debug("{}\n  changing perms and retrying... (attempt: {}/{}, iteration: {}/{})", e.what(), retry_attempt, max_attempts_v, iteration,
+			log.debug("{}\n  changing perms and retrying... (attempt: {}/{}, iteration: {}/{})",
+					  e.what(),
+					  retry_attempt,
+					  max_attempts_v,
+					  iteration,
 					  max_iterations_v);
 			fs::permissions(failed_path, fs::perms::owner_write | fs::perms::others_write);
 		}
@@ -179,46 +213,72 @@ void util::rm_rf(fs::path const& path) {
 
 void Workspace::setup(fs::path const& working_dir, fs::path src_dir, bool const wipe_src) {
 	m_src_dir = std::move(src_dir);
-	if (!working_dir.empty() && !fs::exists(working_dir)) { util::mkdir(working_dir); }
+	if (!working_dir.empty() && !fs::exists(working_dir)) {
+		util::mkdir(working_dir);
+	}
 	util::cd(working_dir);
-	if (wipe_src && fs::is_directory(m_src_dir)) { util::rm_rf(m_src_dir); }
-	if (!fs::is_directory(m_src_dir)) { util::mkdir(m_src_dir); }
+	if (wipe_src && fs::is_directory(m_src_dir)) {
+		util::rm_rf(m_src_dir);
+	}
+	if (!fs::is_directory(m_src_dir)) {
+		util::mkdir(m_src_dir);
+	}
 }
 
 Program::Program(std::string_view const command, std::string_view const does_exist_args) : m_command(command) {
-	if (!shell::execute_silent(command, does_exist_args)) { throw Panic{std::format("{} not found", get_command())}; }
+	if (!shell::execute_silent(command, does_exist_args)) {
+		throw Panic{std::format("{} not found", get_command())};
+	}
 }
 
-auto Program::execute(std::string_view const args) const -> bool { return shell::execute(m_command, args).is_success(); }
+auto Program::execute(std::string_view const args) const -> bool {
+	return shell::execute(m_command, args).is_success();
+}
 
 void Git::Host::set_value(std::string_view value) {
-	while (!value.empty() && value.ends_with('/')) { value.remove_suffix(1); }
-	if (value.empty()) { return; }
+	while (!value.empty() && value.ends_with('/')) {
+		value.remove_suffix(1);
+	}
+	if (value.empty()) {
+		return;
+	}
 	m_value = value;
 }
 
 auto Git::Host::to_url(std::string_view const uri) const -> std::string {
-	if (contains_host(uri)) { return std::string{uri}; }
+	if (contains_host(uri)) {
+		return std::string{uri};
+	}
 	return std::format("{}/{}", m_value, uri);
 }
 
 void Git::clone(Clone const& params) const {
-	if (fs::exists(params.dest_dir)) { util::rm_rf(params.dest_dir); }
+	if (fs::exists(params.dest_dir)) {
+		util::rm_rf(params.dest_dir);
+	}
 	auto builder = StringBuilder{.value = std::format("{} --depth={}", Clone::name_v, params.depth)};
-	if (!params.branch.empty()) { builder.append(std::format("--branch={}", params.branch)); }
+	if (!params.branch.empty()) {
+		builder.append(std::format("--branch={}", params.branch));
+	}
 	auto const url = host.to_url(params.uri);
 	builder.append(url).append(params.dest_dir.string());
 	if (!execute(builder.value)) {
-		if (params.branch.empty()) { throw Panic{std::format("Failed to clone {}", url)}; }
+		if (params.branch.empty()) {
+			throw Panic{std::format("Failed to clone {}", url)};
+		}
 		throw Panic{std::format("Failed to clone {} (branch: {})", url, params.branch)};
 	}
 }
 
 auto Zip::create_archive(fs::path const& dir_to_add) const -> std::string {
 	auto const zip_name = std::format("{}.zip", dir_to_add.filename().string());
-	if (fs::exists(zip_name)) { util::rm_rf(zip_name); }
+	if (fs::exists(zip_name)) {
+		util::rm_rf(zip_name);
+	}
 	auto const args = build_args(zip_name, dir_to_add.string());
-	if (!execute(args)) { throw Panic{std::format("Failed to create ZIP {}", zip_name)}; }
+	if (!execute(args)) {
+		throw Panic{std::format("Failed to create ZIP {}", zip_name)};
+	}
 	return zip_name;
 }
 
@@ -230,13 +290,18 @@ auto Zip::build_args(std::string_view const zip_name, std::string_view const dir
 #endif
 }
 
-SetupPackage::SetupPackage(Git const& git, fs::path const& src_dir, Info const& info) : m_git(&git), m_src_dir(&src_dir), m_info(&info) {}
+SetupPackage::SetupPackage(Git const& git, fs::path const& src_dir, Info const& info)
+	: m_git(&git),
+	  m_src_dir(&src_dir),
+	  m_info(&info) {}
 
 void SetupPackage::execute() {
 	m_state = State::Busy;
 
 	auto subdir = fs::path{m_info->subdir}.generic_string();
-	if (subdir.empty()) { subdir = fs::path{m_info->uri}.stem().generic_string(); }
+	if (subdir.empty()) {
+		subdir = fs::path{m_info->uri}.stem().generic_string();
+	}
 	log.info("-- starting package setup: {}", subdir);
 
 	try {
@@ -255,7 +320,10 @@ void SetupPackage::execute() {
 
 		if (!m_info->custom_command.empty()) {
 			auto const result = shell::execute(m_info->custom_command);
-			if (!result) { throw Panic{std::format("Failed to execute custom command for {} (exit code: {})", subdir, result.get_code())}; }
+			if (!result) {
+				throw Panic{
+					std::format("Failed to execute custom command for {} (exit code: {})", subdir, result.get_code())};
+			}
 		}
 
 		log.info("== package setup complete: {}", subdir);
@@ -267,30 +335,50 @@ void SetupPackage::execute() {
 }
 } // namespace depzip::detail
 
-auto depzip::create_instance(InstanceCreateInfo const& create_info) -> std::unique_ptr<Instance> { return std::make_unique<detail::Instance>(create_info); }
+auto depzip::create_instance(InstanceCreateInfo const& create_info) -> std::unique_ptr<Instance> {
+	return std::make_unique<detail::Instance>(create_info);
+}
 
 void depzip::from_json(dj::Json const& json, PackageInfo& package) {
 	from_json(json["uri"], package.uri);
 	from_json(json["branch"], package.branch, package.branch);
 	from_json(json["subdir"], package.subdir, package.subdir);
-	for (auto const& subpath : json["remove_subpaths"].as_array()) { from_json(subpath, package.remove_subpaths.emplace_back()); }
+	for (auto const& subpath : json["remove_subpaths"].as_array()) {
+		from_json(subpath, package.remove_subpaths.emplace_back());
+	}
 	from_json(json["custom_command"], package.custom_command);
 }
 
 void depzip::to_json(dj::Json& json, PackageInfo const& package) {
-	if (!package.uri.empty()) { to_json(json["uri"], package.uri); }
-	if (!package.branch.empty()) { to_json(json["branch"], package.branch); }
-	if (!package.subdir.empty()) { to_json(json["subdir"], package.subdir); }
-	for (auto const subpath : package.remove_subpaths) { to_json(json["remove_subpaths"].push_back(), subpath); }
-	if (!package.custom_command.empty()) { to_json(json["custom_command"], package.custom_command); }
+	if (!package.uri.empty()) {
+		to_json(json["uri"], package.uri);
+	}
+	if (!package.branch.empty()) {
+		to_json(json["branch"], package.branch);
+	}
+	if (!package.subdir.empty()) {
+		to_json(json["subdir"], package.subdir);
+	}
+	for (auto const subpath : package.remove_subpaths) {
+		to_json(json["remove_subpaths"].push_back(), subpath);
+	}
+	if (!package.custom_command.empty()) {
+		to_json(json["custom_command"], package.custom_command);
+	}
 }
 
 void depzip::from_json(dj::Json const& json, Manifest& manifest) {
-	for (auto const& package : json["packages"].as_array()) { from_json(package, manifest.packages.emplace_back()); }
+	for (auto const& package : json["packages"].as_array()) {
+		from_json(package, manifest.packages.emplace_back());
+	}
 	from_json(json["default_host"], manifest.default_host);
 }
 
 void depzip::to_json(dj::Json& json, Manifest const& manifest) {
-	for (auto const& package : manifest.packages) { to_json(json["packages"].push_back(), package); }
-	if (!manifest.default_host.empty()) { to_json(json["default_host"], manifest.default_host); }
+	for (auto const& package : manifest.packages) {
+		to_json(json["packages"].push_back(), package);
+	}
+	if (!manifest.default_host.empty()) {
+		to_json(json["default_host"], manifest.default_host);
+	}
 }

@@ -13,18 +13,26 @@ namespace fs = std::filesystem;
 
 [[nodiscard]] auto resolved_path(fs::path const& in) -> fs::path {
 	KLIB_ASSERT(!in.empty());
-	if (!fs::is_symlink(in)) { return in; }
+	if (!fs::is_symlink(in)) {
+		return in;
+	}
 
 	auto ret = klib::resolve_symlink(in.string());
-	if (ret.empty()) { throw Panic{std::format("Unresolved symlink: {}", in.generic_string())}; }
+	if (ret.empty()) {
+		throw Panic{std::format("Unresolved symlink: {}", in.generic_string())};
+	}
 	return ret;
 }
 
 [[nodiscard]] auto locate_manifest(fs::path in) -> fs::path {
 	if (!in.empty()) {
 		in = resolved_path(in);
-		if (!fs::exists(in)) { throw Panic{std::format("Nonexistent depzip manifest: {}", in.string())}; }
-		if (!fs::is_regular_file(in)) { throw Panic{std::format("depzip manifest is not a file: {}", in.string())}; }
+		if (!fs::exists(in)) {
+			throw Panic{std::format("Nonexistent depzip manifest: {}", in.string())};
+		}
+		if (!fs::is_regular_file(in)) {
+			throw Panic{std::format("depzip manifest is not a file: {}", in.string())};
+		}
 		return in;
 	}
 
@@ -34,7 +42,9 @@ namespace fs = std::filesystem;
 		"depzip.jsonc"sv,
 	};
 	for (auto const path : default_paths_v) {
-		if (fs::is_regular_file(path)) { return path; }
+		if (fs::is_regular_file(path)) {
+			return path;
+		}
 	}
 
 	throw Panic{"Failed to locate depzip manifest"};
@@ -43,7 +53,9 @@ namespace fs = std::filesystem;
 
 auto App::run(int const argc, char const* const* argv) -> int {
 	auto const parse_result = parse_args(argc, argv);
-	if (parse_result.should_early_exit()) { return parse_result.return_code(); }
+	if (parse_result.should_early_exit()) {
+		return parse_result.return_code();
+	}
 
 	run();
 	return EXIT_SUCCESS;

@@ -2,15 +2,15 @@
   "packages": [
     {
       "uri": "karnkaul/djson",
-      "branch": "v3.1.5"
+      "branch": "v3.1.6"
     },
     {
       "uri": "karnkaul/klib",
-      "branch": "v0.6.9"
+      "branch": "v0.6.10"
     },
     {
       "uri": "karnkaul/clap",
-      "branch": "v0.1.2"
+      "branch": "v0.1.3"
     }
   ]
 }
